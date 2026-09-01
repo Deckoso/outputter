@@ -4,90 +4,186 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Outputter</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 110'%3E%3Cpolygon points='50,4 95,30 95,80 50,106 5,80 5,30' fill='%23101016' stroke='%237c5cff' stroke-width='6' stroke-linejoin='round'/%3E%3Ctext x='50' y='66' text-anchor='middle' font-family='-apple-system,Helvetica,Arial' font-weight='700' font-size='38' fill='%23f5f5f7'%3EMC%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="aurora-tokens.css">
 <style>
-  :root{
-    --bg:#1b1b1e; --panel:#242428; --panel2:#2c2c31; --line:#3a3a41;
-    --text:#e8e8ea; --muted:#9a9aa3; --accent:#2f80ed; --danger:#e05656;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
-    font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow:hidden}
-  #app{display:grid;grid-template-columns:330px 1fr;height:100vh}
-  aside{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;display:flex;flex-direction:column}
-  section{padding:12px 14px;border-bottom:1px solid var(--line)}
-  h1{font-size:15px;margin:0 0 2px;font-weight:600}
-  h1 small{color:var(--muted);font-weight:400;margin-left:6px}
-  h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;font-weight:600;display:flex;align-items:center;gap:8px}
-  h2 .tag{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 6px;text-transform:none;letter-spacing:0;font-weight:500;color:var(--text);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
-  .row label{flex:1;color:var(--muted)}
+  /* ═══ Outputter · design Aurora (MC++) ═══ */
+  /* menu flutua sobre cores saturadas do LED: vidro mais denso p/ legibilidade */
+  :root{--menu-bg:rgba(247,247,250,.90)}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--menu-bg:rgba(19,19,25,.88)}}
+  :root[data-theme="dark"]{--menu-bg:rgba(19,19,25,.88)}
+  html,body{height:100%;overflow:hidden}
+  body{font-size:13px;line-height:1.4}
+  #app{display:grid;grid-template-rows:56px 1fr;grid-template-columns:344px 1fr;height:100vh}
+
+  /* ── barra superior (vidro) ── */
+  header{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:0 16px 0 14px;
+    background:var(--glass);border-bottom:1px solid var(--stroke);
+    backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);box-shadow:var(--specular);z-index:5}
+  .brand{display:flex;align-items:center;gap:10px}
+  .hexico{width:30px;height:33px;position:relative;display:grid;place-items:center;flex:none}
+  .hexico svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .hexico polygon{fill:var(--surface);stroke:var(--stroke-2);stroke-width:6;stroke-linejoin:round}
+  .hexico .lab{position:relative;z-index:1;display:inline-flex;align-items:baseline;font-weight:750;letter-spacing:-.05em;font-size:9px;line-height:1}
+  .hexico .pp{color:var(--neon);font-size:5.5px;transform:translateY(-.55em);margin-left:1px;text-shadow:0 0 6px var(--neon-soft)}
+  .wordmark{font-size:17px;font-weight:700;letter-spacing:-.03em}
+  .eyebrow{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);font-weight:600;margin-left:6px}
+  .eyebrow b{color:var(--neon-ink);font-weight:600}
+  .spacer{flex:1}
+  .seg{display:inline-flex;background:var(--seg-bg);border-radius:999px;padding:3px;position:relative}
+  .seg button{font-family:inherit;font-size:12.5px;font-weight:590;color:var(--dim);background:none;border:0;padding:6px 14px;border-radius:999px;cursor:pointer;transition:color var(--t) var(--ease);position:relative;z-index:1;white-space:nowrap}
+  .seg button.on{color:var(--txt)}
+  .seg .thumb{position:absolute;top:3px;bottom:3px;border-radius:999px;background:var(--thumb);border:.5px solid var(--thumb-stroke);box-shadow:var(--specular),0 3px 8px rgba(0,0,0,.18);transition:left .32s var(--ease),width .32s var(--ease)}
+
+  /* ── lateral (painel de vidro) ── */
+  aside{padding:12px 0 12px 12px;min-height:0}
+  .side{height:100%;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;
+    background:var(--glass);border:1px solid var(--stroke);border-radius:var(--r-lg);
+    backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);box-shadow:var(--specular),var(--shadow)}
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){header,.side{background:var(--bg-2)}}
+  section{padding:14px 16px;border-bottom:1px solid var(--stroke)}
+  section:last-of-type{border-bottom:0}
+  h2{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:600;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+  h2 .tag{background:var(--input-bg);border:1px solid var(--stroke);border-radius:999px;padding:1px 8px;text-transform:none;letter-spacing:0;font-weight:590;color:var(--txt);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row{display:flex;gap:6px;align-items:center;margin-bottom:7px}
+  .row label{flex:1;color:var(--dim);font-size:12.5px}
   .row.two > *{flex:1}
+  .x{color:var(--faint);font-size:12px}
   input[type=number],input[type=text],select{
-    width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:5px;padding:5px 7px;font:inherit;min-width:0}
-  input[type=number]{width:74px}
-  input[type=color]{width:34px;height:26px;border:1px solid var(--line);border-radius:5px;background:var(--bg);padding:2px;cursor:pointer}
-  input:focus,select:focus{outline:1px solid var(--accent);border-color:var(--accent)}
-  button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:5px;padding:6px 10px;font:inherit;cursor:pointer;white-space:nowrap}
-  button:hover{background:#35353b}
-  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-  button.primary:hover{background:#3d8cf0}
-  button.danger{color:var(--danger)}
-  button:disabled{opacity:.5;cursor:default}
-  button.sm{padding:3px 8px;font-size:12px}
-  .btns{display:flex;gap:6px;flex-wrap:wrap}
-  .btns button{flex:1}
-  .chk{display:flex;align-items:center;gap:6px;margin:3px 0;cursor:pointer;user-select:none}
-  .chk input{margin:0}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
-  ul.list{list-style:none;margin:0 0 8px;padding:0;max-height:190px;overflow-y:auto}
-  ul.list li{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:5px;cursor:pointer;border:1px solid transparent}
-  ul.list li:hover{background:var(--panel2)}
-  ul.list li.sel{background:var(--panel2);border-color:var(--accent)}
-  ul.list .sw{width:14px;height:14px;border-radius:3px;flex:none}
-  ul.list .ic{width:16px;height:11px;border:1.5px solid var(--muted);border-radius:2px;flex:none}
-  ul.list li.sel .ic{border-color:var(--accent)}
-  ul.list .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  ul.list .sz{color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
-  .info{color:var(--muted);font-size:12px;margin-top:4px;font-variant-numeric:tabular-nums}
-  .warn{color:#f0b24a;font-size:12px;margin-top:4px}
-  .empty{color:var(--muted);font-style:italic;padding:6px 8px;cursor:default!important}
-  main{position:relative;overflow:hidden;background:#141416}
+    width:100%;background:var(--input-bg);color:var(--txt);border:1px solid var(--stroke);border-radius:var(--r-sm);
+    padding:6px 9px;font:inherit;font-size:13px;min-width:0;transition:border-color var(--t),box-shadow var(--t)}
+  input[type=number]{width:70px;font-variant-numeric:tabular-nums}
+  select{appearance:none;-webkit-appearance:none;padding-right:26px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2386868b' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 10px center}
+  input:focus,select:focus{outline:none;border-color:var(--neon);box-shadow:0 0 0 3px rgba(124,92,255,.22)}
+  input[type=color]{width:34px;height:28px;border:1px solid var(--stroke);border-radius:var(--r-sm);background:var(--input-bg);padding:3px;cursor:pointer}
+  input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+  input[type=color]::-webkit-color-swatch{border:0;border-radius:6px}
+
+  /* botões: vidro (padrão), neon (primário), texto vermelho (destrutivo) */
+  .b{font-family:inherit;font-size:12.5px;font-weight:590;border-radius:var(--r-sm);padding:7px 11px;cursor:pointer;
+    background:var(--glass-2);color:var(--txt);border:1px solid var(--stroke);white-space:nowrap;
+    transition:transform var(--t) var(--ease),background var(--t),border-color var(--t),color var(--t)}
+  .b:hover{border-color:var(--stroke-2)}
+  .b:active{transform:scale(.97)}
+  .b:focus-visible{outline:2px solid var(--neon);outline-offset:2px}
+  .b.p{background:var(--neon);color:#fff;border-color:transparent}
+  .b.p:hover{background:#8b6dff}
+  .b.d{color:var(--err)}
+  .b.d:hover{background:var(--err);color:#fff;border-color:transparent}
+  .b:disabled{opacity:.4;cursor:default;transform:none}
+  .btns{display:flex;gap:6px}
+  .btns .b{flex:1}
+  .btns + .btns{margin-top:6px}
+
+  /* listas */
+  ul.list{list-style:none;margin:0 0 10px;padding:0;max-height:176px;overflow-y:auto}
+  ul.list li{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:var(--r-sm);cursor:pointer;
+    border:1px solid transparent;transition:background var(--t),box-shadow var(--t)}
+  ul.list li:hover{background:var(--input-bg)}
+  ul.list li.sel{background:var(--glass-2);border-color:var(--stroke);box-shadow:inset 2px 0 0 var(--neon),var(--specular)}
+  ul.list .sw{width:12px;height:12px;border-radius:4px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+  ul.list .ic{width:16px;height:11px;border:1.5px solid var(--faint);border-radius:3px;flex:none}
+  ul.list li.sel .ic{border-color:var(--neon)}
+  ul.list .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+  ul.list .sz{color:var(--dim);font-size:11px;font-variant-numeric:tabular-nums}
+  .empty{color:var(--faint);font-style:italic;padding:6px 10px;cursor:default!important}
+  .info{color:var(--dim);font-size:12px;margin-top:4px;font-variant-numeric:tabular-nums}
+  .warn{color:var(--amber);font-size:12px;margin-top:4px;display:flex;align-items:center;gap:6px}
+  .warn:empty{display:none}
+  .warn::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--amber);flex:none}
+  .dim{opacity:.4;pointer-events:none}
+
+  /* toggles iOS (compactos) */
+  .tgs{display:grid;grid-template-columns:1fr;gap:2px}
+  .tg{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--txt);cursor:pointer;user-select:none;padding:3px 0}
+  .tg .sw{width:34px;height:20px;border-radius:999px;background:rgba(120,120,128,.32);position:relative;flex:none;transition:background .25s var(--ease)}
+  .tg .sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.3);transition:left .25s var(--ease)}
+  .tg input{position:absolute;opacity:0;width:0;height:0}
+  .tg input:checked + .sw{background:var(--neon)}
+  .tg input:checked + .sw::after{left:16px}
+  .tg input:focus-visible + .sw{outline:2px solid var(--neon);outline-offset:2px}
+
+  /* card de exportação: o herói — a luz corre no perímetro (1 por tela) */
+  .export{margin:14px 16px;padding:14px;border-radius:var(--r-lg);background:var(--glass-2);border:1px solid var(--stroke);box-shadow:var(--specular)}
+  .export h2{margin-bottom:8px}
+  .hint{color:var(--faint);font-size:11px;line-height:1.55;margin-top:10px}
+  kbd{background:var(--input-bg);border:1px solid var(--stroke);border-radius:4px;padding:0 4px;font-size:10.5px;font-family:var(--mono)}
+  .flex1{flex:1}
+  .sig{padding:10px 16px 12px;color:var(--faint);font-size:11.5px;text-align:center}
+  .sig b{color:var(--dim);font-weight:590}
+  .sig .pp{color:var(--neon-ink);font-weight:700}
+
+  /* ── área de trabalho ── */
+  main{position:relative;overflow:hidden;min-height:0}
   #view{position:absolute;inset:0;width:100%;height:100%;cursor:grab;touch-action:none;display:block}
   #view.dragging{cursor:grabbing}
   #view.move{cursor:move}
-  #hud{position:absolute;left:12px;bottom:12px;background:rgba(0,0,0,.6);padding:5px 9px;border-radius:5px;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;pointer-events:none}
-  #topbar{position:absolute;right:12px;top:12px;display:flex;gap:6px}
-  #topbar button{background:rgba(36,36,40,.9)}
-  .hint{color:var(--muted);font-size:11px;margin-top:8px;line-height:1.5}
-  kbd{background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:0 4px;font-size:11px}
-  .flex1{flex:1}
-  .dim{opacity:.4;pointer-events:none}
+  #hud{position:absolute;left:14px;bottom:14px;padding:6px 12px;border-radius:999px;font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums;pointer-events:none;
+    background:var(--glass);border:1px solid var(--stroke);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);box-shadow:var(--specular)}
+  #hud b{color:var(--txt);font-weight:590}
+
+  /* ── menu de contexto MC++ ── */
+  #ctxmenu{position:fixed;z-index:100;min-width:224px;display:none;flex-direction:column;padding:6px;
+    background:var(--menu-bg);border:1px solid var(--stroke);border-radius:14px;
+    backdrop-filter:blur(30px) saturate(170%);-webkit-backdrop-filter:blur(30px) saturate(170%);
+    box-shadow:var(--specular),0 18px 44px rgba(0,0,0,.30);transform-origin:top left;animation:ctx .18s var(--ease)}
+  @keyframes ctx{from{opacity:0;transform:scale(.96) translateY(-3px)}to{opacity:1;transform:none}}
+  #ctxmenu.open{display:flex}
+  .mi{display:flex;align-items:center;gap:11px;padding:8px 12px;border-radius:9px;font-size:13px;color:var(--txt);cursor:pointer;border:0;background:none;font-family:inherit;text-align:left;width:100%}
+  .mi:hover{background:var(--neon);color:#fff}
+  .mi:hover .kbd,.mi:hover svg{color:#fff;opacity:1}
+  .mi svg{width:15px;height:15px;flex:none;color:var(--neon-ink);opacity:.9}
+  .mi .kbd{margin-left:auto;font-size:11px;color:var(--faint);letter-spacing:.05em}
+  .mi.danger{color:var(--err)} .mi.danger svg{color:var(--err)}
+  .mi.danger:hover{background:var(--err);color:#fff}
+  .mi:disabled{opacity:.4;cursor:default}
+  .mi:disabled:hover{background:none;color:var(--txt)}
+  .msep{height:1px;background:var(--stroke);margin:5px 10px}
+  .mtitle{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:600;padding:6px 12px 4px}
+  @media (prefers-reduced-motion:reduce){#ctxmenu,.b,.tg .sw,.tg .sw::after,.seg .thumb{animation:none;transition:none}}
 </style>
 </head>
 <body>
 <div id="app">
-<aside>
-  <section>
-    <h1>Outputter <small>v2.0</small></h1>
-    <div class="info">Saídas de vídeo como pranchetas. Em cada saída, monte as telas painel por painel e exporte o mapa na resolução exata.</div>
-  </section>
+<header>
+  <div class="brand">
+    <div class="hexico" title="MC++"><svg viewBox="0 0 100 110" aria-hidden="true"><polygon points="50,4 95,30 95,80 50,106 5,80 5,30"/></svg><span class="lab">MC<span class="pp">++</span></span></div>
+    <span class="wordmark">Outputter</span>
+    <span class="eyebrow">pixel map · <b>LED</b></span>
+  </div>
+  <div class="spacer"></div>
+  <div class="seg" id="segView">
+    <button id="fitView" title="Ver todas as saídas (F)">Ver tudo</button>
+    <button id="fitSel" title="Enquadrar a saída selecionada">Enquadrar</button>
+    <button id="zoom100" title="Zoom 1:1">1:1</button>
+  </div>
+  <div class="seg" id="segTheme" title="Tema">
+    <button data-th="" class="on">Auto</button>
+    <button data-th="light">Claro</button>
+    <button data-th="dark">Escuro</button>
+    <span class="thumb"></span>
+  </div>
+</header>
 
+<aside><div class="side">
   <section>
     <h2>Saídas de vídeo</h2>
     <ul class="list" id="outputList"></ul>
     <div class="btns">
-      <button id="addOutput" class="primary">+ Nova saída</button>
-      <button id="dupOutput" class="sm" title="Duplicar saída selecionada (com as telas)">Duplicar</button>
-      <button id="delOutput" class="sm danger" title="Remover saída selecionada">Remover</button>
+      <button class="b p" id="addOutput">+ Nova saída</button>
+      <button class="b" id="dupOutput" title="Duplicar saída selecionada (com as telas)">Duplicar</button>
+      <button class="b d" id="delOutput" title="Remover saída selecionada">Remover</button>
     </div>
-    <div class="btns" style="margin-top:6px">
-      <button id="arrangeOutputs" class="sm" title="Coloca as saídas lado a lado, com espaço entre elas">Organizar lado a lado</button>
+    <div class="btns">
+      <button class="b" id="arrangeOutputs" title="Coloca as saídas lado a lado, com espaço entre elas">Organizar lado a lado</button>
     </div>
   </section>
 
   <section id="outEditor">
     <h2>Saída selecionada <span class="tag" id="outTag"></span></h2>
-    <div class="row"><label>Nome</label><input type="text" id="oName" style="width:180px"></div>
+    <div class="row"><label>Nome</label><input type="text" id="oName" style="width:186px"></div>
     <div class="row">
       <select id="canvasPreset">
         <option value="1920x1080">1920 × 1080 (Full HD)</option>
@@ -101,12 +197,12 @@
     </div>
     <div class="row two">
       <input type="number" id="cw" min="1" max="16384" step="1" title="Largura">
-      <span style="color:var(--muted)">×</span>
+      <span class="x">×</span>
       <input type="number" id="ch" min="1" max="16384" step="1" title="Altura">
       <input type="color" id="cbg" title="Cor de fundo">
     </div>
     <div class="btns">
-      <button id="fitCanvas" class="sm" title="Redimensiona a saída para envolver todas as telas dela">Ajustar ao conteúdo</button>
+      <button class="b" id="fitCanvas" title="Redimensiona a saída para envolver todas as telas dela">Ajustar ao conteúdo</button>
     </div>
   </section>
 
@@ -114,104 +210,91 @@
     <h2>Telas de LED <span class="tag" id="scrTag"></span></h2>
     <ul class="list" id="screenList"></ul>
     <div class="btns">
-      <button id="addScreen" class="primary">+ Nova tela</button>
-      <button id="dupScreen" class="sm" title="Duplicar tela selecionada (⌘D)">Duplicar</button>
-      <button id="delScreen" class="sm danger" title="Remover tela selecionada (Delete)">Remover</button>
+      <button class="b p" id="addScreen">+ Nova tela</button>
+      <button class="b" id="dupScreen" title="Duplicar tela selecionada (⌘D)">Duplicar</button>
+      <button class="b d" id="delScreen" title="Remover tela selecionada (Delete)">Remover</button>
     </div>
-    <div class="btns" style="margin-top:6px">
-      <button id="arrangeRow" class="sm" title="Enfileira as telas desta saída lado a lado, sem espaço">Enfileirar</button>
-      <button id="arrangeCol" class="sm" title="Empilha as telas desta saída de cima para baixo">Empilhar</button>
+    <div class="btns">
+      <button class="b" id="arrangeRow" title="Enfileira as telas desta saída lado a lado, sem espaço">Enfileirar</button>
+      <button class="b" id="arrangeCol" title="Empilha as telas desta saída de cima para baixo">Empilhar</button>
     </div>
   </section>
 
   <section id="editor">
     <h2>Tela selecionada</h2>
-    <div class="row"><label>Nome</label><input type="text" id="sName" style="width:180px"></div>
-    <div class="row"><label>Painel</label>
-      <select id="sPreset" style="width:180px"></select>
-    </div>
+    <div class="row"><label>Nome</label><input type="text" id="sName" style="width:186px"></div>
+    <div class="row"><label>Painel</label><select id="sPreset" style="width:186px"></select></div>
     <div class="row"><label>Pixels por painel</label>
-      <input type="number" id="sPw" min="1" max="4096" title="Largura do painel em pixels">
-      <span style="color:var(--muted)">×</span>
+      <input type="number" id="sPw" min="1" max="4096" title="Largura do painel em pixels"><span class="x">×</span>
       <input type="number" id="sPh" min="1" max="4096" title="Altura do painel em pixels">
     </div>
     <div class="row"><label>Painéis (col × lin)</label>
-      <input type="number" id="sCols" min="1" max="500">
-      <span style="color:var(--muted)">×</span>
+      <input type="number" id="sCols" min="1" max="500"><span class="x">×</span>
       <input type="number" id="sRows" min="1" max="500">
     </div>
     <div class="row"><label>Posição X, Y</label>
-      <input type="number" id="sX" step="1">
-      <input type="number" id="sY" step="1">
+      <input type="number" id="sX" step="1"><input type="number" id="sY" step="1">
     </div>
     <div class="row"><label>Cor</label>
       <input type="color" id="sColor">
-      <button id="nextColor" class="sm" title="Próxima cor da paleta">Trocar</button>
+      <button class="b" id="nextColor" title="Próxima cor da paleta">Trocar</button>
     </div>
     <div class="row"><label>Módulo físico (mm)</label>
-      <input type="number" id="sMmW" min="1" step="1" title="Largura física do painel">
-      <span style="color:var(--muted)">×</span>
+      <input type="number" id="sMmW" min="1" step="1" title="Largura física do painel"><span class="x">×</span>
       <input type="number" id="sMmH" min="1" step="1" title="Altura física do painel">
     </div>
-    <div class="row"><label>Mover para saída</label>
-      <select id="sMoveTo" style="width:180px"></select>
-    </div>
+    <div class="row"><label>Mover para saída</label><select id="sMoveTo" style="width:186px"></select></div>
     <div class="info" id="sInfo"></div>
     <div class="warn" id="sWarn"></div>
   </section>
 
   <section>
     <h2>Desenho</h2>
-    <div class="grid2">
-      <label class="chk"><input type="checkbox" id="oChecker"> Xadrez por painel</label>
-      <label class="chk"><input type="checkbox" id="oGrid"> Grade de painéis</label>
-      <label class="chk"><input type="checkbox" id="oDiag"> Diagonais</label>
-      <label class="chk"><input type="checkbox" id="oCircle"> Círculo</label>
-      <label class="chk"><input type="checkbox" id="oLabel"> Etiqueta central</label>
-      <label class="chk"><input type="checkbox" id="oPanelInfo"> Painéis na etiqueta</label>
-      <label class="chk"><input type="checkbox" id="oNumbers"> Numerar painéis</label>
-      <label class="chk"><input type="checkbox" id="oRes"> Resolução no canto</label>
+    <div class="tgs">
+      <label class="tg">Xadrez por painel<input type="checkbox" id="oChecker"><span class="sw"></span></label>
+      <label class="tg">Grade de painéis<input type="checkbox" id="oGrid"><span class="sw"></span></label>
+      <label class="tg">Diagonais<input type="checkbox" id="oDiag"><span class="sw"></span></label>
+      <label class="tg">Círculo<input type="checkbox" id="oCircle"><span class="sw"></span></label>
+      <label class="tg">Etiqueta central<input type="checkbox" id="oLabel"><span class="sw"></span></label>
+      <label class="tg">Painéis na etiqueta<input type="checkbox" id="oPanelInfo"><span class="sw"></span></label>
+      <label class="tg">Numerar painéis<input type="checkbox" id="oNumbers"><span class="sw"></span></label>
+      <label class="tg">Resolução no canto<input type="checkbox" id="oRes"><span class="sw"></span></label>
     </div>
   </section>
 
-  <section>
+  <div class="export aurora-runbox">
+    <svg class="aurora-tracer" aria-hidden="true"><rect pathLength="100"/></svg>
     <h2>Exportar</h2>
+    <div class="btns"><button class="b p" id="exportPng">PNG da saída selecionada</button></div>
+    <div class="btns"><button class="b" id="exportAll">PNG de todas as saídas</button></div>
     <div class="btns">
-      <button id="exportPng" class="primary">PNG da saída selecionada</button>
-    </div>
-    <div class="btns" style="margin-top:6px">
-      <button id="exportAll" class="sm">PNG de todas as saídas</button>
-    </div>
-    <div class="btns" style="margin-top:6px">
-      <button id="saveJson" class="sm">Salvar projeto</button>
-      <button id="loadJson" class="sm">Abrir projeto</button>
+      <button class="b" id="saveJson">Salvar projeto</button>
+      <button class="b" id="loadJson">Abrir projeto</button>
       <input type="file" id="fileInput" accept="application/json,.json" hidden>
     </div>
     <div class="hint">
-      Clique numa saída para ver as telas dela. Arraste o nome da saída para movê-la. Arraste as telas (snap nas bordas; <kbd>⌥</kbd> ignora). Scroll = zoom, arrastar o fundo = mover a vista.<br>
-      <kbd>←↑→↓</kbd> move 1 px · <kbd>⇧</kbd> move 1 painel · <kbd>Delete</kbd> remove tela · <kbd>⌘D</kbd> duplica tela · <kbd>F</kbd> ajusta a vista
+      Clique numa saída para ver as telas dela. Arraste o nome da saída para movê-la. Arraste as telas (snap nas bordas; <kbd>⌥</kbd> ignora). Clique-direito abre o menu. Scroll = zoom.<br>
+      <kbd>←↑→↓</kbd> 1 px · <kbd>⇧</kbd> 1 painel · <kbd>⌫</kbd> remove tela · <kbd>⌘D</kbd> duplica · <kbd>F</kbd> ver tudo
     </div>
-  </section>
+  </div>
   <div class="flex1"></div>
-</aside>
+  <div class="sig">um software <b>MC</b><span class="pp">++</span></div>
+</div></aside>
 
 <main>
   <canvas id="view"></canvas>
-  <div id="topbar">
-    <button id="fitView" class="sm" title="Ver todas as saídas (F)">Ver tudo</button>
-    <button id="fitSel" class="sm" title="Enquadrar a saída selecionada">Enquadrar saída</button>
-    <button id="zoom100" class="sm" title="Zoom 1:1">1:1</button>
-  </div>
   <div id="hud"></div>
 </main>
 </div>
 
+<div id="ctxmenu" role="menu" aria-hidden="true"></div>
+
 <script>
 'use strict';
 /* =====================================================================
-   Outputter — mapas de pixels para painéis de LED
+   Outputter — mapas de pixels para painéis de LED · um software MC++
    Saídas de vídeo (pranchetas) → telas de LED (grades de painéis)
-   Arquivo único, sem dependências. Estado em memória + autosave local.
+   Arquivo único + aurora-tokens.css. Estado em memória + autosave local.
    ===================================================================== */
 
 // ---------- Presets de painel (px por módulo; todos editáveis) ----------
@@ -236,6 +319,7 @@ const PALETTE = ['#8bd400','#7d1fff','#ff1616','#1de0e0','#ffd400','#ff7a00','#f
 
 const STORAGE_KEY = 'outputter-v2';
 const LEGACY_KEY = 'pixelmap-led-v1';
+const THEME_KEY = 'outputter-theme';
 const OUTPUT_GAP = 160; // espaço entre pranchetas (px de mundo)
 
 // ---------- Estado ----------
@@ -278,9 +362,9 @@ function shade(hex, amt) {
   const f = v => Math.max(0, Math.min(255, Math.round(amt < 0 ? v * (1 + amt) : v + (255 - v) * amt)));
   return `rgb(${f(r)},${f(g)},${f(b)})`;
 }
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
 // ---------- Renderização de uma saída (vista e exportação) ----------
-// Desenha em coordenadas locais da saída (0,0 = canto superior esquerdo)
 function drawOutput(ctx, out, opts) {
   ctx.fillStyle = out.bg;
   ctx.fillRect(0, 0, out.w, out.h);
@@ -375,9 +459,9 @@ const vctx = view.getContext('2d');
 const hud = document.getElementById('hud');
 let vw = 0, vh = 0, dpr = 1;
 const cam = { scale: 0.5, ox: 0, oy: 0 }; // mundo -> tela: sx = x*scale + ox
-let guides = [];   // linhas de snap ativas, em coords de mundo [{axis, v}]
+let guides = [];
 let dirty = false;
-const labelRects = new Map(); // id da saída -> retângulo do nome (mundo), p/ arrastar a prancheta
+const labelRects = new Map(); // id da saída -> retângulo do nome (mundo)
 
 function resizeView() {
   const rect = view.parentElement.getBoundingClientRect();
@@ -393,7 +477,7 @@ function worldBounds(outputs) {
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
 function fitTo(b) {
-  const m = 48, top = 70; // margem extra em cima p/ o nome da prancheta
+  const m = 48, top = 70;
   cam.scale = Math.max(0.02, Math.min((vw - m * 2) / b.w, (vh - m - top) / b.h));
   cam.ox = (vw - b.w * cam.scale) / 2 - b.x * cam.scale;
   cam.oy = top + (vh - top - m - b.h * cam.scale) / 2 - b.y * cam.scale;
@@ -401,57 +485,69 @@ function fitTo(b) {
 }
 function fitView() { fitTo(worldBounds(state.outputs)); }
 function fitSelected() { const o = curOut(); if (o) fitTo({ x: o.x, y: o.y, w: o.w, h: o.h }); else fitView(); }
+function zoom100() {
+  const o = curOut() || { x: 0, y: 0, w: 1920, h: 1080 };
+  cam.scale = 1; cam.ox = (vw - o.w) / 2 - o.x; cam.oy = (vh - o.h) / 2 - o.y; invalidate();
+}
 function invalidate() { if (!dirty) { dirty = true; requestAnimationFrame(paint); } }
 
 function paint() {
   dirty = false;
+  const C = { bg: cssVar('--bg-2') || '#101014', txt: cssVar('--txt') || '#f5f5f7', neon: cssVar('--neon') || '#7c5cff',
+              neonInk: cssVar('--neon-ink') || '#a996ff', dim: cssVar('--dim') || '#86868b', surface: cssVar('--surface') || '#131319' };
+  const dark = !document.documentElement.matches('[data-theme="light"]') &&
+               (document.documentElement.matches('[data-theme="dark"]') || matchMedia('(prefers-color-scheme: dark)').matches);
   vctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  vctx.fillStyle = '#141416'; vctx.fillRect(0, 0, vw, vh);
+  vctx.fillStyle = C.bg; vctx.fillRect(0, 0, vw, vh);
   vctx.setTransform(dpr * cam.scale, 0, 0, dpr * cam.scale, dpr * cam.ox, dpr * cam.oy);
   vctx.imageSmoothingEnabled = cam.scale < 1;
   labelRects.clear();
-  const uiPx = 1 / cam.scale; // 1 px de tela, em unidades de mundo
+  const uiPx = 1 / cam.scale;
   const labelFs = 12 * uiPx;
 
   for (const out of state.outputs) {
     const isSel = out.id === selOut;
-    // sombra
-    vctx.fillStyle = 'rgba(0,0,0,0.45)';
-    vctx.fillRect(out.x + 6 * uiPx, out.y + 6 * uiPx, out.w, out.h);
+    // sombra da prancheta
+    vctx.fillStyle = dark ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.12)';
+    vctx.fillRect(out.x + 6 * uiPx, out.y + 8 * uiPx, out.w, out.h);
     // conteúdo
     vctx.save();
     vctx.translate(out.x, out.y);
     vctx.beginPath(); vctx.rect(0, 0, out.w, out.h); vctx.clip();
     drawOutput(vctx, out, state.opts);
     vctx.restore();
-    // borda
-    vctx.strokeStyle = isSel ? '#2f80ed' : 'rgba(255,255,255,0.25)';
+    // borda (neon só na selecionada: luz de detalhe)
+    vctx.strokeStyle = isSel ? C.neon : (dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)');
     vctx.lineWidth = (isSel ? 2 : 1) * uiPx;
     vctx.strokeRect(out.x, out.y, out.w, out.h);
-    // nome da prancheta (acima, tamanho fixo em tela)
-    vctx.font = `${isSel ? '600 ' : ''}${labelFs}px -apple-system, Helvetica, Arial, sans-serif`;
+    // nome da prancheta (pílula, tamanho fixo em tela)
+    vctx.font = `${isSel ? '600 ' : '500 '}${labelFs}px -apple-system, "SF Pro Text", Helvetica, Arial, sans-serif`;
     vctx.textAlign = 'left'; vctx.textBaseline = 'alphabetic';
     const t = `${out.name}  ·  ${out.w} × ${out.h}`;
     const tw = vctx.measureText(t).width;
-    const lr = { x: out.x, y: out.y - 22 * uiPx, w: tw + 12 * uiPx, h: 18 * uiPx };
+    const lr = { x: out.x, y: out.y - 26 * uiPx, w: tw + 16 * uiPx, h: 20 * uiPx };
     labelRects.set(out.id, lr);
-    vctx.fillStyle = isSel ? '#2f80ed' : 'rgba(60,60,66,0.95)';
-    vctx.fillRect(lr.x, lr.y, lr.w, lr.h);
-    vctx.fillStyle = '#fff';
-    vctx.fillText(t, lr.x + 6 * uiPx, lr.y + 13 * uiPx);
+    roundRect(vctx, lr.x, lr.y, lr.w, lr.h, 10 * uiPx);
+    vctx.fillStyle = isSel ? C.neon : C.surface;
+    vctx.fill();
+    if (!isSel) { vctx.strokeStyle = dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)'; vctx.lineWidth = uiPx; vctx.stroke(); }
+    vctx.fillStyle = isSel ? '#fff' : C.dim;
+    vctx.fillText(t, lr.x + 8 * uiPx, lr.y + 14 * uiPx);
     // seleção de tela
     if (isSel) {
       const s = curScr();
       if (s) {
         const r = rectOf(s);
-        vctx.strokeStyle = '#fff'; vctx.lineWidth = 2 * uiPx; vctx.setLineDash([6 * uiPx, 4 * uiPx]);
+        vctx.strokeStyle = 'rgba(255,255,255,0.9)'; vctx.lineWidth = 4 * uiPx;
+        vctx.strokeRect(out.x + r.x, out.y + r.y, r.w, r.h);
+        vctx.strokeStyle = C.neon; vctx.lineWidth = 2 * uiPx; vctx.setLineDash([6 * uiPx, 4 * uiPx]);
         vctx.strokeRect(out.x + r.x, out.y + r.y, r.w, r.h);
         vctx.setLineDash([]);
       }
     }
   }
   if (guides.length) {
-    vctx.strokeStyle = '#ff3fa4'; vctx.lineWidth = uiPx;
+    vctx.strokeStyle = C.neonInk; vctx.lineWidth = uiPx;
     vctx.beginPath();
     for (const g of guides) {
       if (g.axis === 'x') { vctx.moveTo(g.v, -1e6); vctx.lineTo(g.v, 1e6); }
@@ -460,13 +556,21 @@ function paint() {
     vctx.stroke();
   }
   const o = curOut();
-  hud.textContent = `${state.outputs.length} saída(s) · zoom ${(cam.scale * 100).toFixed(0)}%` + (o ? ` · ${o.name}: ${o.w} × ${o.h} px, ${o.screens.length} tela(s)` : '');
+  hud.innerHTML = `${state.outputs.length} saída(s) · zoom ${(cam.scale * 100).toFixed(0)}%` +
+    (o ? ` · <b></b>: ${o.w} × ${o.h} px, ${o.screens.length} tela(s)` : '');
+  if (o) hud.querySelector('b').textContent = o.name;
+}
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r); ctx.closePath();
 }
 
 // ---------- Interação no canvas ----------
 const toWorld = (sx, sy) => ({ x: (sx - cam.ox) / cam.scale, y: (sy - cam.oy) / cam.scale });
 const inRect = (p, r) => p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h;
-// retorna {type:'label'|'screen'|'output', out, scr}
 function hitTest(p) {
   for (let i = state.outputs.length - 1; i >= 0; i--) {
     const out = state.outputs[i];
@@ -486,6 +590,7 @@ function hitTest(p) {
 let drag = null;
 view.addEventListener('pointerdown', e => {
   if (e.button !== 0 && e.button !== 1) return;
+  closeMenu();
   view.setPointerCapture(e.pointerId);
   const p = toWorld(e.offsetX, e.offsetY);
   const hit = e.button === 0 ? hitTest(p) : null;
@@ -532,7 +637,7 @@ function endDrag() {
 view.addEventListener('pointerup', endDrag);
 view.addEventListener('pointercancel', endDrag);
 view.addEventListener('wheel', e => {
-  e.preventDefault();
+  e.preventDefault(); closeMenu();
   const factor = Math.exp(-e.deltaY * 0.0015);
   const ns = Math.max(0.02, Math.min(16, cam.scale * factor));
   const p = toWorld(e.offsetX, e.offsetY);
@@ -541,7 +646,6 @@ view.addEventListener('wheel', e => {
   invalidate();
 }, { passive: false });
 
-// snap genérico: encaixa as bordas de um retângulo (w,h) em listas de arestas
 function snapRect(w, h, nx, ny, xs, ys) {
   const th = 8 / cam.scale;
   const g = [];
@@ -560,7 +664,6 @@ function snapRect(w, h, nx, ny, xs, ys) {
   if (bestY) { ny = bestY.y; g.push({ axis: 'y', v: bestY.g }); }
   return { x: nx, y: ny, guides: g };
 }
-// tela: snap nas bordas da própria saída e das telas irmãs (coords locais)
 function snapScreen(out, s, nx, ny) {
   const r = rectOf(s);
   const xs = [0, out.w], ys = [0, out.h];
@@ -570,7 +673,6 @@ function snapScreen(out, s, nx, ny) {
   }
   return snapRect(r.w, r.h, nx, ny, xs, ys);
 }
-// prancheta: snap nas bordas das outras pranchetas (encostada ou com o espaço padrão)
 function snapOutput(out, nx, ny) {
   const xs = [], ys = [];
   for (const o of state.outputs) {
@@ -583,6 +685,7 @@ function snapOutput(out, nx, ny) {
 
 // teclado
 window.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeMenu(); return; }
   const tag = (e.target.tagName || '').toLowerCase();
   if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
   if (e.key === 'f' || e.key === 'F') { fitView(); return; }
@@ -640,21 +743,20 @@ outListEl.addEventListener('dblclick', e => {
   if (li) { selectOutput(Number(li.dataset.id), null); fitSelected(); }
 });
 function placeNewOutput(out) {
-  // à direita da prancheta mais à direita, alinhada ao topo dela
   if (!state.outputs.length) { out.x = 0; out.y = 0; return; }
   let right = -Infinity, top = Infinity;
   for (const o of state.outputs) { right = Math.max(right, o.x + o.w); top = Math.min(top, o.y); }
   out.x = right + OUTPUT_GAP; out.y = top;
 }
-$('addOutput').addEventListener('click', () => {
+function addOutput() {
   const ref = curOut();
   const o = newOutput(ref ? { w: ref.w, h: ref.h, bg: ref.bg } : {});
   placeNewOutput(o);
   state.outputs.push(o);
   selectOutput(o.id, null); persist();
   fitView();
-});
-$('dupOutput').addEventListener('click', () => {
+}
+function duplicateOutput() {
   const src = curOut(); if (!src) return;
   const o = newOutput({ name: src.name + ' cópia', w: src.w, h: src.h, bg: src.bg,
     screens: src.screens.map(s => newScreen(null, Object.assign({}, s, { id: uid++ }))) });
@@ -662,20 +764,24 @@ $('dupOutput').addEventListener('click', () => {
   state.outputs.push(o);
   selectOutput(o.id, null); persist();
   fitView();
-});
-$('delOutput').addEventListener('click', () => {
+}
+function removeOutput() {
   const i = state.outputs.findIndex(o => o.id === selOut); if (i < 0) return;
   const o = state.outputs[i];
   if (o.screens.length && !confirm(`Remover "${o.name}" e as ${o.screens.length} tela(s) dela?`)) return;
   state.outputs.splice(i, 1);
   const next = state.outputs.length ? state.outputs[Math.min(i, state.outputs.length - 1)].id : null;
   selOut = null; selectOutput(next, null); persist();
-});
-$('arrangeOutputs').addEventListener('click', () => {
+}
+function arrangeOutputs() {
   let x = 0;
   for (const o of state.outputs) { o.x = x; o.y = 0; x += o.w + OUTPUT_GAP; }
   persist(); fitView();
-});
+}
+$('addOutput').addEventListener('click', addOutput);
+$('dupOutput').addEventListener('click', duplicateOutput);
+$('delOutput').addEventListener('click', removeOutput);
+$('arrangeOutputs').addEventListener('click', arrangeOutputs);
 
 // editor da saída
 const canvasPreset = $('canvasPreset'), cw = $('cw'), ch = $('ch'), cbg = $('cbg'), oName = $('oName');
@@ -705,13 +811,14 @@ function onCanvasSize() {
 }
 cw.addEventListener('change', onCanvasSize); ch.addEventListener('change', onCanvasSize);
 cbg.addEventListener('input', () => { const o = curOut(); if (!o) return; o.bg = cbg.value; invalidate(); persist(); });
-$('fitCanvas').addEventListener('click', () => {
+function fitOutputToContent() {
   const o = curOut(); if (!o || !o.screens.length) return;
   let maxX = 0, maxY = 0;
   for (const s of o.screens) { const r = rectOf(s); maxX = Math.max(maxX, r.x + r.w); maxY = Math.max(maxY, r.y + r.h); }
   o.w = Math.max(1, maxX); o.h = Math.max(1, maxY);
   refreshAll(); persist();
-});
+}
+$('fitCanvas').addEventListener('click', fitOutputToContent);
 function clampInt(v, min, max, fallback) {
   const n = Math.round(Number(v));
   if (!Number.isFinite(n)) return fallback;
@@ -744,14 +851,14 @@ scrListEl.addEventListener('click', e => {
   const li = e.target.closest('li[data-id]');
   if (li) selectOutput(selOut, Number(li.dataset.id));
 });
-$('addScreen').addEventListener('click', () => {
+function addScreen() {
   const o = curOut(); if (!o) return;
   const s = newScreen(o);
   const last = o.screens[o.screens.length - 1];
   if (last) { const r = rectOf(last); s.x = r.x + r.w; s.y = r.y; if (s.x + s.cols * s.pw > o.w) { s.x = 0; s.y = r.y + r.h; } }
   o.screens.push(s);
   selectOutput(o.id, s.id); refreshAll(); persist();
-});
+}
 function duplicateScreen() {
   const o = curOut(), s = curScr(); if (!o || !s) return;
   const c = newScreen(o, Object.assign({}, s, { id: uid++, name: s.name + ' cópia', color: PALETTE[o.screens.length % PALETTE.length] }));
@@ -766,18 +873,21 @@ function removeScreen() {
   selScr = o.screens.length ? o.screens[Math.min(i, o.screens.length - 1)].id : null;
   refreshAll(); persist();
 }
-$('dupScreen').addEventListener('click', duplicateScreen);
-$('delScreen').addEventListener('click', removeScreen);
-$('arrangeRow').addEventListener('click', () => {
+function arrangeRow() {
   const o = curOut(); if (!o) return;
   let x = 0; for (const s of o.screens) { s.x = x; s.y = 0; x += s.cols * s.pw; }
   refreshAll(); persist();
-});
-$('arrangeCol').addEventListener('click', () => {
+}
+function arrangeCol() {
   const o = curOut(); if (!o) return;
   let y = 0; for (const s of o.screens) { s.x = 0; s.y = y; y += s.rows * s.ph; }
   refreshAll(); persist();
-});
+}
+$('addScreen').addEventListener('click', addScreen);
+$('dupScreen').addEventListener('click', duplicateScreen);
+$('delScreen').addEventListener('click', removeScreen);
+$('arrangeRow').addEventListener('click', arrangeRow);
+$('arrangeCol').addEventListener('click', arrangeCol);
 
 // ---------- UI: editor da tela selecionada ----------
 const ed = {
@@ -791,7 +901,6 @@ function syncScreenEditor() {
   const o = curOut(), s = curScr();
   $('editor').classList.toggle('dim', !s);
   $('dupScreen').disabled = !s; $('delScreen').disabled = !s;
-  // opções de "mover para saída"
   ed.moveTo.innerHTML = '';
   for (const out of state.outputs) {
     const op = document.createElement('option'); op.value = out.id; op.textContent = out.name;
@@ -829,20 +938,22 @@ ed.preset.addEventListener('change', () => {
   s.pw = p.pw; s.ph = p.ph; s.mmw = p.mmw; s.mmh = p.mmh;
   refreshAll(); persist();
 });
-$('nextColor').addEventListener('click', () => {
+function nextColor() {
   const s = curScr(); if (!s) return;
   const i = PALETTE.indexOf(s.color);
   s.color = PALETTE[(i + 1) % PALETTE.length];
   refreshAll(); persist();
-});
-ed.moveTo.addEventListener('change', () => {
+}
+$('nextColor').addEventListener('click', nextColor);
+function moveScreenTo(destId) {
   const o = curOut(), s = curScr(); if (!o || !s) return;
-  const dest = state.outputs.find(x => x.id === Number(ed.moveTo.value));
+  const dest = state.outputs.find(x => x.id === destId);
   if (!dest || dest.id === o.id) return;
   o.screens.splice(o.screens.indexOf(s), 1);
   dest.screens.push(s);
   selectOutput(dest.id, s.id); refreshAll(); persist();
-});
+}
+ed.moveTo.addEventListener('change', () => moveScreenTo(Number(ed.moveTo.value)));
 
 // ---------- UI: opções de desenho ----------
 const optMap = { checker: 'oChecker', grid: 'oGrid', diag: 'oDiag', circle: 'oCircle', label: 'oLabel', panelInfo: 'oPanelInfo', numbers: 'oNumbers', res: 'oRes' };
@@ -875,7 +986,7 @@ async function exportOutputs(list) {
       b2.textContent = `Exportando ${i + 1}/${list.length}…`;
       const blob = await renderOutputBlob(out);   // uma imagem por vez, sequencial
       downloadBlob(blob, `${safeName(out.name)}_${out.w}x${out.h}.png`);
-      if (list.length > 1) await new Promise(r => setTimeout(r, 400)); // dá tempo ao navegador entre downloads
+      if (list.length > 1) await new Promise(r => setTimeout(r, 400));
     }
   } catch (err) {
     console.error(err); alert('Falha ao exportar: ' + err.message);
@@ -894,7 +1005,6 @@ function downloadBlob(blob, name) {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
-// projeto JSON
 $('saveJson').addEventListener('click', () => {
   const data = JSON.stringify({ app: 'outputter', version: 2, state }, null, 2);
   downloadBlob(new Blob([data], { type: 'application/json' }), `outputter_${new Date().toISOString().slice(0, 10)}.json`);
@@ -912,6 +1022,120 @@ $('fileInput').addEventListener('change', e => {
   fr.readAsText(f);
 });
 
+// ---------- Menu de contexto MC++ ----------
+const menu = $('ctxmenu');
+const ICON = {
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12h8M12 8v8"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="8" y="8" width="12" height="12" rx="3"/><path d="M4 16V6a2 2 0 012-2h10"/></svg>',
+  pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>',
+  frame: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V5a1 1 0 011-1h4M20 9V5a1 1 0 00-1-1h-4M4 15v4a1 1 0 001 1h4M20 15v4a1 1 0 01-1 1h-4"/></svg>',
+  down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4v11M7 10l5 5 5-5M4 19h16"/></svg>',
+  color: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 010 18z" fill="currentColor" stroke="none"/></svg>',
+  move: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>',
+  eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+};
+function closeMenu() { if (menu.classList.contains('open')) { menu.classList.remove('open'); menu.setAttribute('aria-hidden', 'true'); menu.innerHTML = ''; } }
+// items: {label, icon, kbd, danger, disabled, run} | '-' | {title}
+function openMenu(x, y, items) {
+  menu.innerHTML = '';
+  for (const it of items) {
+    if (it === '-') { const d = document.createElement('div'); d.className = 'msep'; menu.appendChild(d); continue; }
+    if (it.title) { const d = document.createElement('div'); d.className = 'mtitle'; d.textContent = it.title; menu.appendChild(d); continue; }
+    const b = document.createElement('button');
+    b.className = 'mi' + (it.danger ? ' danger' : '');
+    b.disabled = !!it.disabled;
+    b.innerHTML = (ICON[it.icon] || '') + '<span></span>' + (it.kbd ? `<span class="kbd">${it.kbd}</span>` : '');
+    b.querySelector('span').textContent = it.label;
+    b.addEventListener('click', ev => { ev.stopPropagation(); closeMenu(); it.run(); });
+    menu.appendChild(b);
+  }
+  menu.classList.add('open'); menu.setAttribute('aria-hidden', 'false');
+  const mw = menu.offsetWidth, mh = menu.offsetHeight;
+  menu.style.left = Math.min(x, innerWidth - mw - 10) + 'px';
+  menu.style.top = Math.min(y, innerHeight - mh - 10) + 'px';
+}
+function focusName(input) { input.focus(); input.select(); }
+function screenMenu(out, scr) {
+  const others = state.outputs.filter(o => o.id !== out.id);
+  const items = [
+    { title: scr.name },
+    { label: 'Duplicar tela', icon: 'copy', kbd: '⌘D', run: duplicateScreen },
+    { label: 'Renomear', icon: 'pen', run: () => focusName(ed.name) },
+    { label: 'Trocar cor', icon: 'color', run: nextColor },
+  ];
+  if (others.length) {
+    items.push('-');
+    for (const o of others) items.push({ label: `Mover para ${o.name}`, icon: 'move', run: () => moveScreenTo(o.id) });
+  }
+  items.push('-', { label: 'Remover tela', icon: 'trash', kbd: '⌫', danger: true, run: removeScreen });
+  return items;
+}
+function outputMenu(out) {
+  return [
+    { title: out.name },
+    { label: 'Nova tela', icon: 'plus', run: addScreen },
+    { label: 'Enquadrar saída', icon: 'frame', run: fitSelected },
+    { label: 'Ajustar ao conteúdo', icon: 'grid', disabled: !out.screens.length, run: fitOutputToContent },
+    '-',
+    { label: 'Exportar PNG', icon: 'down', run: () => exportOutputs([out]) },
+    { label: 'Duplicar saída', icon: 'copy', run: duplicateOutput },
+    { label: 'Renomear', icon: 'pen', run: () => focusName(oName) },
+    '-',
+    { label: 'Remover saída', icon: 'trash', danger: true, run: removeOutput },
+  ];
+}
+function workspaceMenu() {
+  return [
+    { label: 'Nova saída', icon: 'plus', run: addOutput },
+    { label: 'Organizar lado a lado', icon: 'grid', disabled: !state.outputs.length, run: arrangeOutputs },
+    { label: 'Ver tudo', icon: 'eye', kbd: 'F', run: fitView },
+    '-',
+    { label: 'Exportar todas as saídas', icon: 'down', disabled: !state.outputs.length, run: () => exportOutputs(state.outputs.slice()) },
+  ];
+}
+view.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  const hit = hitTest(toWorld(e.offsetX, e.offsetY));
+  if (hit && hit.type === 'screen') { selectOutput(hit.out.id, hit.scr.id); openMenu(e.clientX, e.clientY, screenMenu(hit.out, hit.scr)); }
+  else if (hit) { selectOutput(hit.out.id, null); openMenu(e.clientX, e.clientY, outputMenu(hit.out)); }
+  else openMenu(e.clientX, e.clientY, workspaceMenu());
+});
+outListEl.addEventListener('contextmenu', e => {
+  const li = e.target.closest('li[data-id]'); if (!li) return;
+  e.preventDefault(); selectOutput(Number(li.dataset.id), null);
+  openMenu(e.clientX, e.clientY, outputMenu(curOut()));
+});
+scrListEl.addEventListener('contextmenu', e => {
+  const li = e.target.closest('li[data-id]'); if (!li) return;
+  e.preventDefault(); selectOutput(selOut, Number(li.dataset.id));
+  openMenu(e.clientX, e.clientY, screenMenu(curOut(), curScr()));
+});
+document.addEventListener('click', closeMenu);
+document.addEventListener('scroll', closeMenu, { passive: true, capture: true });
+
+// ---------- Tema (Auto / Claro / Escuro) ----------
+function segInit(seg, onPick) {
+  const btns = [...seg.querySelectorAll('button')], thumb = seg.querySelector('.thumb');
+  function move(b) {
+    btns.forEach(x => x.classList.toggle('on', x === b));
+    if (thumb) { thumb.style.left = b.offsetLeft + 'px'; thumb.style.width = b.offsetWidth + 'px'; }
+    if (onPick) onPick(b);
+  }
+  btns.forEach(b => b.addEventListener('click', () => move(b)));
+  window.addEventListener('resize', () => { const on = seg.querySelector('.on'); if (on && thumb) { thumb.style.left = on.offsetLeft + 'px'; thumb.style.width = on.offsetWidth + 'px'; } });
+  return { move, btns };
+}
+const root = document.documentElement;
+function applyTheme(th) {
+  if (th === 'light' || th === 'dark') root.setAttribute('data-theme', th); else root.removeAttribute('data-theme');
+  try { localStorage.setItem(THEME_KEY, th || ''); } catch (_) {}
+  invalidate();
+}
+const themeSeg = segInit($('segTheme'), b => applyTheme(b.dataset.th));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', invalidate);
+
 // ---------- Persistência local ----------
 function persist() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) { /* sem storage: segue em memória */ }
@@ -924,13 +1148,11 @@ function loadState(raw) {
       st.outputs = raw.outputs.map(o => newOutput(Object.assign({}, o, { screens: [] })));
       raw.outputs.forEach((o, i) => { st.outputs[i].screens = (Array.isArray(o.screens) ? o.screens : []).map(s => newScreen(st.outputs[i], s)); });
     } else if (raw.canvas && Array.isArray(raw.screens)) {
-      // projeto v1 (uma única saída)
       const o = newOutput({ name: 'Saída 1', w: raw.canvas.w, h: raw.canvas.h, bg: raw.canvas.bg || '#000000' });
       o.screens = raw.screens.map(s => newScreen(o, s));
       st.outputs = [o];
     }
   }
-  // ids únicos
   for (const o of st.outputs) { o.id = uid++; for (const s of o.screens) s.id = uid++; }
   state = st;
   selOut = state.outputs.length ? state.outputs[0].id : null;
@@ -940,13 +1162,18 @@ function loadState(raw) {
 
 // ---------- Boot ----------
 (function boot() {
+  // tema salvo
+  let th = '';
+  try { th = localStorage.getItem(THEME_KEY) || ''; } catch (_) {}
+  const tb = themeSeg.btns.find(b => b.dataset.th === th) || themeSeg.btns[0];
+  requestAnimationFrame(() => themeSeg.move(tb));
+
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (_) {}
   if (!saved) { try { saved = JSON.parse(localStorage.getItem(LEGACY_KEY)); } catch (_) {} }
   resizeView();
   if (saved) loadState(saved);
   else {
-    // exemplo inicial: 2 saídas, a primeira com 4 telas
     const st = defaultState();
     const o1 = newOutput({ name: 'Saída 1', w: 1920, h: 1080, x: 0, y: 0 });
     o1.screens = [
@@ -956,19 +1183,14 @@ function loadState(raw) {
       newScreen(o1, { name: 'Tela 4', pw: 128, ph: 128, cols: 4, rows: 8, x: 1408, y: 0,   color: PALETTE[2] }),
     ];
     const o2 = newOutput({ name: 'Saída 2', w: 1920, h: 1080, x: 1920 + OUTPUT_GAP, y: 0 });
-    o2.screens = [
-      newScreen(o2, { name: 'Tela 1', pw: 128, ph: 128, cols: 15, rows: 8, x: 0, y: 0, color: PALETTE[4] }),
-    ];
+    o2.screens = [ newScreen(o2, { name: 'Tela 1', pw: 128, ph: 128, cols: 15, rows: 8, x: 0, y: 0, color: PALETTE[4] }) ];
     st.outputs = [o1, o2];
     loadState(st);
   }
   window.addEventListener('resize', resizeView);
   $('fitView').addEventListener('click', fitView);
   $('fitSel').addEventListener('click', fitSelected);
-  $('zoom100').addEventListener('click', () => {
-    const o = curOut() || { x: 0, y: 0, w: 1920, h: 1080 };
-    cam.scale = 1; cam.ox = (vw - o.w) / 2 - o.x; cam.oy = (vh - o.h) / 2 - o.y; invalidate();
-  });
+  $('zoom100').addEventListener('click', zoom100);
   window.addEventListener('beforeunload', persist);
 })();
 </script>

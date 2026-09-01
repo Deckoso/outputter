@@ -1,0 +1,126 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   AURORA — Design System da MC++ (More Codes)
+   Camada de tokens + componentes-base. Drop-in: <link rel="stylesheet" href="aurora-tokens.css">
+   Opt-in: use SOMENTE quando o design Aurora for solicitado.
+   Temas: claro (default) + escuro, via prefers-color-scheme e [data-theme].
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root{
+  /* ground — cinza-Apple (claro NUNCA branco puro) */
+  --bg:#ececf1; --bg-2:#e4e4ea; --surface:#f7f7fa;
+  --txt:#1d1d1f; --dim:#6e6e73; --faint:#a1a1a8;
+  /* liquid glass */
+  --glass:rgba(255,255,255,.58); --glass-2:rgba(255,255,255,.80);
+  --stroke:rgba(0,0,0,.08); --stroke-2:rgba(0,0,0,.14);
+  --specular:inset 0 1px 0 rgba(255,255,255,.7);
+  --shadow:0 10px 30px rgba(0,0,0,.10); --shadow-lg:0 30px 70px rgba(0,0,0,.16);
+  --seg-bg:rgba(120,120,128,.16); --thumb:rgba(255,255,255,.95); --thumb-stroke:rgba(0,0,0,.06);
+  /* neon — a assinatura (luz de detalhe, nunca banho) */
+  --neon:#7c5cff; --neon-ink:#5b39f0; --neon-soft:rgba(124,92,255,.45);
+  /* semântica — certo/errado obrigatório */
+  --ok:#28a745; --amber:#e8890a; --err:#e5343f;
+  --input-bg:rgba(0,0,0,.035);
+  /* geometria + movimento */
+  --r-lg:18px; --r:12px; --r-sm:10px;
+  --ease:cubic-bezier(.32,.72,0,1); --t:.22s;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",Roboto,sans-serif;
+  --mono:"SF Mono",ui-monospace,"JetBrains Mono","Menlo",monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0a0a0c; --bg-2:#101014; --surface:#131319;
+  --txt:#f5f5f7; --dim:#86868b; --faint:#5c5c63;
+  --glass:rgba(255,255,255,.055); --glass-2:rgba(255,255,255,.09);
+  --stroke:rgba(255,255,255,.10); --stroke-2:rgba(255,255,255,.16);
+  --specular:inset 0 1px 0 rgba(255,255,255,.10);
+  --shadow:0 10px 30px rgba(0,0,0,.35); --shadow-lg:0 40px 90px rgba(0,0,0,.55);
+  --seg-bg:rgba(118,118,128,.24); --thumb:rgba(255,255,255,.16); --thumb-stroke:rgba(255,255,255,.12);
+  --neon:#7c5cff; --neon-ink:#a996ff; --neon-soft:rgba(124,92,255,.55);
+  --ok:#30d158; --amber:#ff9f0a; --err:#ff453a;
+  --input-bg:rgba(255,255,255,.04);
+}}
+:root[data-theme="dark"]{
+  --bg:#0a0a0c; --bg-2:#101014; --surface:#131319;
+  --txt:#f5f5f7; --dim:#86868b; --faint:#5c5c63;
+  --glass:rgba(255,255,255,.055); --glass-2:rgba(255,255,255,.09);
+  --stroke:rgba(255,255,255,.10); --stroke-2:rgba(255,255,255,.16);
+  --specular:inset 0 1px 0 rgba(255,255,255,.10);
+  --shadow:0 10px 30px rgba(0,0,0,.35); --shadow-lg:0 40px 90px rgba(0,0,0,.55);
+  --seg-bg:rgba(118,118,128,.24); --thumb:rgba(255,255,255,.16); --thumb-stroke:rgba(255,255,255,.12);
+  --neon:#7c5cff; --neon-ink:#a996ff; --neon-soft:rgba(124,92,255,.55);
+  --ok:#30d158; --amber:#ff9f0a; --err:#ff453a;
+  --input-bg:rgba(255,255,255,.04);
+}
+
+/* ── base ── */
+*{box-sizing:border-box; margin:0}
+body{font-family:var(--font); color:var(--txt); background:var(--bg); line-height:1.5;
+  -webkit-font-smoothing:antialiased; transition:background .3s var(--ease),color .3s var(--ease)}
+
+/* ── material: liquid glass ── */
+.aurora-glass{background:var(--glass); border:1px solid var(--stroke); border-radius:var(--r-lg);
+  backdrop-filter:blur(24px) saturate(160%); -webkit-backdrop-filter:blur(24px) saturate(160%);
+  box-shadow:var(--specular),var(--shadow)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .aurora-glass{background:var(--bg-2)}
+}
+
+/* ── botões (nível 4 do neon: preenchimento sólido flat, estilo iOS) ── */
+.aurora-btn{font-family:inherit; font-size:14px; font-weight:590; border-radius:var(--r); padding:11px 20px;
+  cursor:pointer; border:1px solid transparent; transition:transform var(--t) var(--ease),background var(--t),border-color var(--t)}
+.aurora-btn:active{transform:scale(.97)}
+.aurora-btn:focus-visible{outline:2px solid var(--neon); outline-offset:2px}
+.aurora-btn--primary{background:var(--neon); color:#fff}
+.aurora-btn--primary:hover{background:#8b6dff}
+.aurora-btn--danger{background:var(--err); color:#fff}
+.aurora-btn--glass{background:var(--glass-2); color:var(--txt); border-color:var(--stroke)}
+.aurora-btn--text{background:none; color:var(--neon-ink)}
+
+/* ── input / foco (nível 3: anel) ── */
+.aurora-input{width:100%; background:var(--input-bg); color:var(--txt); border:1px solid var(--stroke);
+  border-radius:var(--r); padding:11px 13px; font-size:14px; font-family:inherit;
+  transition:border-color var(--t),box-shadow var(--t)}
+.aurora-input:focus{outline:none; border-color:var(--neon); box-shadow:0 0 0 3px rgba(124,92,255,.22)}
+
+/* ── segmentado iOS (thumb de vidro) ── */
+.aurora-seg{display:inline-flex; background:var(--seg-bg); border-radius:999px; padding:3px; position:relative}
+.aurora-seg button{font-family:inherit; font-size:13px; font-weight:590; color:var(--dim); background:none; border:0;
+  padding:7px 18px; border-radius:999px; cursor:pointer; transition:color var(--t); position:relative; z-index:1; white-space:nowrap}
+.aurora-seg button.on{color:var(--txt)}
+.aurora-seg .thumb{position:absolute; top:3px; bottom:3px; border-radius:999px; background:var(--thumb);
+  border:.5px solid var(--thumb-stroke); box-shadow:var(--specular),0 3px 8px rgba(0,0,0,.18);
+  transition:left .32s var(--ease),width .32s var(--ease)}
+
+/* ── toggle iOS ── */
+.aurora-toggle{width:50px; height:30px; border-radius:999px; background:rgba(120,120,128,.32);
+  position:relative; cursor:pointer; border:0; transition:background .25s var(--ease)}
+.aurora-toggle.on{background:var(--neon)}
+.aurora-toggle .knob{position:absolute; top:2px; left:2px; width:26px; height:26px; border-radius:50%;
+  background:#fff; box-shadow:0 3px 8px rgba(0,0,0,.3); transition:left .25s var(--ease)}
+.aurora-toggle.on .knob{left:22px}
+
+/* ── status (nível 2: ponto vivo) ── */
+.aurora-st{display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--dim)}
+.aurora-st .d{width:7px; height:7px; border-radius:50%; flex:none}
+.aurora-st--ok .d{background:var(--ok)}
+.aurora-st--amber .d{background:var(--amber)}
+.aurora-st--err .d{background:var(--err)}
+.aurora-st--neon .d{background:var(--neon); box-shadow:0 0 6px var(--neon-soft); animation:aurora-pulse 1.6s var(--ease) infinite}
+@keyframes aurora-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── neon vivo: fio (nível 1) ── */
+.aurora-fio{height:1px; border:0; background:linear-gradient(90deg,var(--neon),transparent); box-shadow:0 0 10px var(--neon-soft)}
+
+/* ── neon vivo: perímetro (a luz corre — herói, 1 por tela) ──
+   Uso: <div class="aurora-runbox"><svg class="aurora-tracer"><rect/></svg> …conteúdo… </div> */
+.aurora-runbox{position:relative}
+.aurora-tracer{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible}
+.aurora-tracer rect{x:1px; y:1px; width:calc(100% - 2px); height:calc(100% - 2px); rx:17px; fill:none;
+  stroke:var(--neon); stroke-width:1.5; stroke-linecap:round; stroke-dasharray:10 90;
+  filter:drop-shadow(0 0 5px var(--neon-soft)); animation:aurora-travel 8s linear infinite}
+@keyframes aurora-travel{to{stroke-dashoffset:-100}}
+
+/* ── acessibilidade: reduzir movimento ── */
+@media (prefers-reduced-motion:reduce){
+  .aurora-st--neon .d,.aurora-tracer rect{animation:none}
+  .aurora-tracer rect{stroke-dasharray:none; opacity:.4}
+}
