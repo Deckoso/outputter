@@ -9,9 +9,9 @@
 <style>
   /* ═══ Outputter · design Aurora (MC++) ═══ */
   /* menu flutua sobre cores saturadas do LED: vidro mais denso p/ legibilidade */
-  :root{--menu-bg:rgba(247,247,250,.90)}
-  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--menu-bg:rgba(19,19,25,.88)}}
-  :root[data-theme="dark"]{--menu-bg:rgba(19,19,25,.88)}
+  :root{--menu-bg:rgba(247,247,250,.94)}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--menu-bg:rgba(19,19,25,.94)}}
+  :root[data-theme="dark"]{--menu-bg:rgba(19,19,25,.94)}
   html,body{height:100%;overflow:hidden}
   body{font-size:13px;line-height:1.4}
   #app{display:grid;grid-template-rows:56px 1fr;grid-template-columns:344px 1fr;height:100vh}
@@ -86,6 +86,7 @@
   ul.list .sw{width:12px;height:12px;border-radius:4px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
   ul.list .ic{width:16px;height:11px;border:1.5px solid var(--faint);border-radius:3px;flex:none}
   ul.list li.sel .ic{border-color:var(--neon)}
+  ul.list li.prim .nm{color:var(--neon-ink)}
   ul.list .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
   ul.list .sz{color:var(--dim);font-size:11px;font-variant-numeric:tabular-nums}
   .empty{color:var(--faint);font-style:italic;padding:6px 10px;cursor:default!important}
@@ -120,6 +121,7 @@
   #view{position:absolute;inset:0;width:100%;height:100%;cursor:grab;touch-action:none;display:block}
   #view.dragging{cursor:grabbing}
   #view.move{cursor:move}
+  #view.lasso{cursor:crosshair}
   #hud{position:absolute;left:14px;bottom:14px;padding:6px 12px;border-radius:999px;font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums;pointer-events:none;
     background:var(--glass);border:1px solid var(--stroke);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);box-shadow:var(--specular)}
   #hud b{color:var(--txt);font-weight:590}
@@ -142,7 +144,34 @@
   .mi:disabled:hover{background:none;color:var(--txt)}
   .msep{height:1px;background:var(--stroke);margin:5px 10px}
   .mtitle{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:600;padding:6px 12px 4px}
-  @media (prefers-reduced-motion:reduce){#ctxmenu,.b,.tg .sw,.tg .sw::after,.seg .thumb{animation:none;transition:none}}
+  /* botões de ícone do topo */
+  .ib{width:32px;height:32px;display:grid;place-items:center;border-radius:10px;background:var(--glass-2);border:1px solid var(--stroke);color:var(--txt);cursor:pointer;padding:0;transition:transform var(--t) var(--ease),border-color var(--t)}
+  .ib svg{width:15px;height:15px}
+  .ib:hover{border-color:var(--stroke-2)} .ib:active{transform:scale(.95)} .ib:disabled{opacity:.35;cursor:default;transform:none}
+  .ib:focus-visible{outline:2px solid var(--neon);outline-offset:2px}
+  .ibs{display:flex;gap:6px}
+
+  /* toast */
+  #toast{position:absolute;left:50%;bottom:18px;transform:translate(-50%,8px);opacity:0;pointer-events:none;padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:590;color:var(--txt);
+    background:var(--glass-2);border:1px solid var(--stroke);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);box-shadow:var(--specular),var(--shadow);
+    transition:opacity .2s var(--ease),transform .2s var(--ease)}
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+  #toast::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--neon);margin-right:8px;vertical-align:1px;box-shadow:0 0 6px var(--neon-soft)}
+
+  /* painel de atalhos */
+  #help{position:fixed;inset:0;z-index:90;display:none;place-items:center;background:rgba(0,0,0,.35)}
+  #help.open{display:grid}
+  #help .card{width:min(880px,92vw);max-height:86vh;overflow:auto;padding:22px 26px;border-radius:var(--r-lg);background:var(--menu-bg);border:1px solid var(--stroke);
+    backdrop-filter:blur(30px) saturate(170%);-webkit-backdrop-filter:blur(30px) saturate(170%);box-shadow:var(--specular),var(--shadow-lg);animation:ctx .18s var(--ease)}
+  #help .head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  #help .head h2{margin:0;font-size:15px;letter-spacing:-.01em;text-transform:none;color:var(--txt)}
+  #help .head .close{margin-left:auto}
+  #help .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px 26px}
+  #help h3{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:600;margin:0 0 8px}
+  #help .sc{display:flex;gap:10px;align-items:baseline;padding:4px 0;border-bottom:1px solid var(--stroke);font-size:12.5px}
+  #help .sc .k{font-family:var(--mono);font-size:11px;color:var(--neon-ink);white-space:nowrap;min-width:118px}
+  #help .sc .d{color:var(--dim)}
+  @media (prefers-reduced-motion:reduce){#ctxmenu,#help .card,#toast,.b,.ib,.tg .sw,.tg .sw::after,.seg .thumb{animation:none;transition:none}}
 </style>
 </head>
 <body>
@@ -158,6 +187,11 @@
     <button id="fitView" title="Ver todas as saídas (F)">Ver tudo</button>
     <button id="fitSel" title="Enquadrar a saída selecionada">Enquadrar</button>
     <button id="zoom100" title="Zoom 1:1">1:1</button>
+  </div>
+  <div class="ibs">
+    <button class="ib" id="btnUndo" title="Desfazer (⌘Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/></svg></button>
+    <button class="ib" id="btnRedo" title="Refazer (⌘⇧Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 000 10h3"/></svg></button>
+    <button class="ib" id="btnHelp" title="Atalhos (?)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 015 0c0 1.5-2.5 2-2.5 3.5M12 17h.01"/></svg></button>
   </div>
   <div class="seg" id="segTheme" title="Tema">
     <button data-th="" class="on">Auto</button>
@@ -221,7 +255,7 @@
   </section>
 
   <section id="editor">
-    <h2>Tela selecionada</h2>
+    <h2>Tela selecionada <span class="tag" id="selTag"></span></h2>
     <div class="row"><label>Nome</label><input type="text" id="sName" style="width:186px"></div>
     <div class="row"><label>Painel</label><select id="sPreset" style="width:186px"></select></div>
     <div class="row"><label>Pixels por painel</label>
@@ -273,8 +307,8 @@
       <input type="file" id="fileInput" accept="application/json,.json" hidden>
     </div>
     <div class="hint">
-      Clique numa saída para ver as telas dela. Arraste o nome da saída para movê-la. Arraste as telas (snap nas bordas; <kbd>⌥</kbd> ignora). Clique-direito abre o menu. Scroll = zoom.<br>
-      <kbd>←↑→↓</kbd> 1 px · <kbd>⇧</kbd> 1 painel · <kbd>⌫</kbd> remove tela · <kbd>⌘D</kbd> duplica · <kbd>F</kbd> ver tudo
+      Clique numa saída para ver as telas dela. Arraste o nome da saída para movê-la. Arraste telas (snap nas bordas; <kbd>⌥</kbd> ignora), inclusive para outra saída. Laço no vazio seleciona várias; <kbd>⇧</kbd> + clique adiciona. Clique-direito abre o menu.<br>
+      <kbd>⌘C</kbd> <kbd>⌘V</kbd> <kbd>⌘Z</kbd> <kbd>⌘A</kbd> <kbd>⌫</kbd> funcionam · <kbd>?</kbd> mostra todos os atalhos
     </div>
   </div>
   <div class="flex1"></div>
@@ -284,10 +318,17 @@
 <main>
   <canvas id="view"></canvas>
   <div id="hud"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
 </main>
 </div>
 
 <div id="ctxmenu" role="menu" aria-hidden="true"></div>
+<div id="help" aria-hidden="true">
+  <div class="card">
+    <div class="head"><h2>Atalhos de teclado</h2><button class="b close">Fechar</button></div>
+    <div class="cols"></div>
+  </div>
+</div>
 
 <script>
 'use strict';
@@ -295,6 +336,8 @@
    Outputter — mapas de pixels para painéis de LED · um software MC++
    Saídas de vídeo (pranchetas) → telas de LED (grades de painéis)
    Arquivo único + aurora-tokens.css. Estado em memória + autosave local.
+   v2.2: seleção múltipla, laço, clipboard, desfazer/refazer, atalhos,
+         alinhar/distribuir, arrastar entre saídas, painel de atalhos.
    ===================================================================== */
 
 // ---------- Presets de painel (px por módulo; todos editáveis) ----------
@@ -321,11 +364,14 @@ const STORAGE_KEY = 'outputter-v2';
 const LEGACY_KEY = 'pixelmap-led-v1';
 const THEME_KEY = 'outputter-theme';
 const OUTPUT_GAP = 160; // espaço entre pranchetas (px de mundo)
+const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform);
+const MOD = IS_MAC ? '⌘' : 'Ctrl';
 
 // ---------- Estado ----------
 let state = defaultState();
-let selOut = null;   // id da saída selecionada
-let selScr = null;   // id da tela selecionada (pertence à saída selecionada)
+let selOut = null;          // id da saída selecionada
+let sel = new Set();        // ids das telas selecionadas (todas na saída selecionada)
+let primary = null;         // tela principal da seleção (a que o editor mostra)
 let uid = 1;
 
 function defaultState() {
@@ -350,7 +396,13 @@ function newScreen(out, over = {}) {
 }
 const rectOf = s => ({ x: s.x, y: s.y, w: s.cols * s.pw, h: s.rows * s.ph });
 const curOut = () => state.outputs.find(o => o.id === selOut) || null;
-const curScr = () => { const o = curOut(); return o ? (o.screens.find(s => s.id === selScr) || null) : null; };
+const curScr = () => { const o = curOut(); return o ? (o.screens.find(s => s.id === primary) || null) : null; };
+const selScreens = () => { const o = curOut(); return o ? o.screens.filter(s => sel.has(s.id)) : []; };
+function bboxOf(list) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const s of list) { const r = rectOf(s); x0 = Math.min(x0, r.x); y0 = Math.min(y0, r.y); x1 = Math.max(x1, r.x + r.w); y1 = Math.max(y1, r.y + r.h); }
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
 
 // ---------- Cores ----------
 function hexToRgb(hex) {
@@ -461,6 +513,7 @@ let vw = 0, vh = 0, dpr = 1;
 const cam = { scale: 0.5, ox: 0, oy: 0 }; // mundo -> tela: sx = x*scale + ox
 let guides = [];
 let dirty = false;
+let marquee = null;           // {out, x0,y0,x1,y1} em coords locais da saída
 const labelRects = new Map(); // id da saída -> retângulo do nome (mundo)
 
 function resizeView() {
@@ -489,6 +542,12 @@ function zoom100() {
   const o = curOut() || { x: 0, y: 0, w: 1920, h: 1080 };
   cam.scale = 1; cam.ox = (vw - o.w) / 2 - o.x; cam.oy = (vh - o.h) / 2 - o.y; invalidate();
 }
+function zoomBy(factor, sx = vw / 2, sy = vh / 2) {
+  const ns = Math.max(0.02, Math.min(16, cam.scale * factor));
+  const p = toWorld(sx, sy);
+  cam.scale = ns; cam.ox = sx - p.x * ns; cam.oy = sy - p.y * ns;
+  invalidate();
+}
 function invalidate() { if (!dirty) { dirty = true; requestAnimationFrame(paint); } }
 
 function paint() {
@@ -507,16 +566,13 @@ function paint() {
 
   for (const out of state.outputs) {
     const isSel = out.id === selOut;
-    // sombra da prancheta
     vctx.fillStyle = dark ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.12)';
     vctx.fillRect(out.x + 6 * uiPx, out.y + 8 * uiPx, out.w, out.h);
-    // conteúdo
     vctx.save();
     vctx.translate(out.x, out.y);
     vctx.beginPath(); vctx.rect(0, 0, out.w, out.h); vctx.clip();
     drawOutput(vctx, out, state.opts);
     vctx.restore();
-    // borda (neon só na selecionada: luz de detalhe)
     vctx.strokeStyle = isSel ? C.neon : (dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)');
     vctx.lineWidth = (isSel ? 2 : 1) * uiPx;
     vctx.strokeRect(out.x, out.y, out.w, out.h);
@@ -533,18 +589,33 @@ function paint() {
     if (!isSel) { vctx.strokeStyle = dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)'; vctx.lineWidth = uiPx; vctx.stroke(); }
     vctx.fillStyle = isSel ? '#fff' : C.dim;
     vctx.fillText(t, lr.x + 8 * uiPx, lr.y + 14 * uiPx);
-    // seleção de tela
-    if (isSel) {
-      const s = curScr();
-      if (s) {
+    // seleção de telas
+    if (isSel && sel.size) {
+      for (const s of out.screens) {
+        if (!sel.has(s.id)) continue;
         const r = rectOf(s);
-        vctx.strokeStyle = 'rgba(255,255,255,0.9)'; vctx.lineWidth = 4 * uiPx;
+        const isPrim = s.id === primary;
+        vctx.strokeStyle = 'rgba(255,255,255,0.9)'; vctx.lineWidth = (isPrim ? 4 : 3) * uiPx;
         vctx.strokeRect(out.x + r.x, out.y + r.y, r.w, r.h);
-        vctx.strokeStyle = C.neon; vctx.lineWidth = 2 * uiPx; vctx.setLineDash([6 * uiPx, 4 * uiPx]);
+        vctx.strokeStyle = C.neon; vctx.lineWidth = 2 * uiPx;
+        if (isPrim) vctx.setLineDash([6 * uiPx, 4 * uiPx]);
         vctx.strokeRect(out.x + r.x, out.y + r.y, r.w, r.h);
         vctx.setLineDash([]);
       }
+      // caixa do grupo
+      if (sel.size > 1) {
+        const b = bboxOf(selScreens());
+        vctx.strokeStyle = C.neonInk; vctx.lineWidth = uiPx; vctx.setLineDash([3 * uiPx, 3 * uiPx]);
+        vctx.strokeRect(out.x + b.x - 4 * uiPx, out.y + b.y - 4 * uiPx, b.w + 8 * uiPx, b.h + 8 * uiPx);
+        vctx.setLineDash([]);
+      }
     }
+  }
+  if (marquee) {
+    const m = marquee, o = m.out;
+    const x = Math.min(m.x0, m.x1), y = Math.min(m.y0, m.y1), w = Math.abs(m.x1 - m.x0), h = Math.abs(m.y1 - m.y0);
+    vctx.fillStyle = 'rgba(124,92,255,0.12)'; vctx.fillRect(o.x + x, o.y + y, w, h);
+    vctx.strokeStyle = C.neon; vctx.lineWidth = uiPx; vctx.strokeRect(o.x + x, o.y + y, w, h);
   }
   if (guides.length) {
     vctx.strokeStyle = C.neonInk; vctx.lineWidth = uiPx;
@@ -557,8 +628,9 @@ function paint() {
   }
   const o = curOut();
   hud.innerHTML = `${state.outputs.length} saída(s) · zoom ${(cam.scale * 100).toFixed(0)}%` +
-    (o ? ` · <b></b>: ${o.w} × ${o.h} px, ${o.screens.length} tela(s)` : '');
-  if (o) hud.querySelector('b').textContent = o.name;
+    (o ? ` · <b></b>: ${o.w} × ${o.h} px, ${o.screens.length} tela(s)` : '') +
+    (sel.size > 1 ? ` · <b>${sel.size} selecionadas</b>` : '');
+  const bName = hud.querySelector('b'); if (o && bName) bName.textContent = o.name;
 }
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
@@ -571,6 +643,7 @@ function roundRect(ctx, x, y, w, h, r) {
 // ---------- Interação no canvas ----------
 const toWorld = (sx, sy) => ({ x: (sx - cam.ox) / cam.scale, y: (sy - cam.oy) / cam.scale });
 const inRect = (p, r) => p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h;
+const intersects = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 function hitTest(p) {
   for (let i = state.outputs.length - 1; i >= 0; i--) {
     const out = state.outputs[i];
@@ -588,36 +661,59 @@ function hitTest(p) {
   return null;
 }
 let drag = null;
+let spaceDown = false;
+let lastPointer = { x: 0, y: 0 }; // última posição do ponteiro na vista (p/ colar no cursor)
+
 view.addEventListener('pointerdown', e => {
   if (e.button !== 0 && e.button !== 1) return;
-  closeMenu();
+  closeMenu(); closeHelp();
+  if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
   view.setPointerCapture(e.pointerId);
   const p = toWorld(e.offsetX, e.offsetY);
-  const hit = e.button === 0 ? hitTest(p) : null;
+  const hit = (e.button === 0 && !spaceDown) ? hitTest(p) : null;
+  const additive = e.shiftKey || e.metaKey || e.ctrlKey;
   if (hit && hit.type === 'screen') {
-    selectOutput(hit.out.id, hit.scr.id);
-    drag = { type: 'screen', sx: e.offsetX, sy: e.offsetY, out: hit.out, scr: hit.scr, x0: hit.scr.x, y0: hit.scr.y };
+    if (additive) {
+      if (hit.out.id !== selOut) selectOutput(hit.out.id, [hit.scr.id], hit.scr.id);
+      else if (sel.has(hit.scr.id)) { sel.delete(hit.scr.id); if (primary === hit.scr.id) primary = [...sel].pop() ?? null; refreshAll(); }
+      else { sel.add(hit.scr.id); primary = hit.scr.id; refreshAll(); }
+      return;
+    }
+    if (hit.out.id !== selOut || !sel.has(hit.scr.id)) selectOutput(hit.out.id, [hit.scr.id], hit.scr.id);
+    else if (primary !== hit.scr.id) { primary = hit.scr.id; refreshAll(); }
+    const starts = new Map(); for (const s of selScreens()) starts.set(s.id, { x: s.x, y: s.y });
+    drag = { type: 'screen', sx: e.offsetX, sy: e.offsetY, out: hit.out, scr: hit.scr, starts, moved: false };
     view.classList.add('move');
   } else if (hit && hit.type === 'label') {
-    selectOutput(hit.out.id, null);
+    selectOutput(hit.out.id, [], null);
     drag = { type: 'output', sx: e.offsetX, sy: e.offsetY, out: hit.out, x0: hit.out.x, y0: hit.out.y };
     view.classList.add('move');
+  } else if (hit && hit.type === 'output') {
+    // área vazia dentro da saída: laço de seleção
+    if (hit.out.id !== selOut) selectOutput(hit.out.id, [], null);
+    else if (!additive && sel.size) { sel.clear(); primary = null; refreshAll(); }
+    const q = { x: p.x - hit.out.x, y: p.y - hit.out.y };
+    marquee = { out: hit.out, x0: q.x, y0: q.y, x1: q.x, y1: q.y };
+    drag = { type: 'marquee', base: additive ? new Set(sel) : new Set(), moved: false };
+    view.classList.add('lasso');
   } else {
-    if (hit && hit.type === 'output') selectOutput(hit.out.id, null);
     drag = { type: 'pan', sx: e.offsetX, sy: e.offsetY, ox: cam.ox, oy: cam.oy };
     view.classList.add('dragging');
   }
 });
 view.addEventListener('pointermove', e => {
+  lastPointer = { x: e.offsetX, y: e.offsetY };
   if (!drag) return;
   const dx = (e.offsetX - drag.sx) / cam.scale, dy = (e.offsetY - drag.sy) / cam.scale;
   if (drag.type === 'pan') {
     cam.ox = drag.ox + (e.offsetX - drag.sx); cam.oy = drag.oy + (e.offsetY - drag.sy);
   } else if (drag.type === 'screen') {
-    const s = drag.scr, out = drag.out;
-    const nx = Math.round(drag.x0 + dx), ny = Math.round(drag.y0 + dy);
-    const r = e.altKey ? { x: nx, y: ny, guides: [] } : snapScreen(out, s, nx, ny);
-    s.x = r.x; s.y = r.y;
+    if (Math.abs(e.offsetX - drag.sx) + Math.abs(e.offsetY - drag.sy) > 2) drag.moved = true;
+    const s = drag.scr, out = drag.out, st = drag.starts.get(s.id);
+    const nx = Math.round(st.x + dx), ny = Math.round(st.y + dy);
+    const r = e.altKey ? { x: nx, y: ny, guides: [] } : snapScreen(out, s, nx, ny, drag.starts);
+    const ddx = r.x - st.x, ddy = r.y - st.y;
+    for (const [id, p0] of drag.starts) { const t = out.screens.find(z => z.id === id); if (t) { t.x = p0.x + ddx; t.y = p0.y + ddy; } }
     guides = r.guides.map(g => ({ axis: g.axis, v: g.v + (g.axis === 'x' ? out.x : out.y) }));
     syncScreenEditor(); refreshScreenList();
   } else if (drag.type === 'output') {
@@ -625,25 +721,65 @@ view.addEventListener('pointermove', e => {
     const nx = Math.round(drag.x0 + dx), ny = Math.round(drag.y0 + dy);
     const r = e.altKey ? { x: nx, y: ny, guides: [] } : snapOutput(out, nx, ny);
     out.x = r.x; out.y = r.y; guides = r.guides;
+  } else if (drag.type === 'marquee' && marquee) {
+    const p = toWorld(e.offsetX, e.offsetY);
+    marquee.x1 = p.x - marquee.out.x; marquee.y1 = p.y - marquee.out.y;
+    drag.moved = true;
+    const m = marquee;
+    const box = { x: Math.min(m.x0, m.x1), y: Math.min(m.y0, m.y1), w: Math.abs(m.x1 - m.x0), h: Math.abs(m.y1 - m.y0) };
+    const ids = new Set(drag.base);
+    for (const s of m.out.screens) if (intersects(box, rectOf(s))) ids.add(s.id);
+    sel = ids; if (!sel.has(primary)) primary = [...sel].pop() ?? null;
+    refreshScreenList(); syncScreenEditor();
   }
   invalidate();
 });
-function endDrag() {
+function endDrag(e) {
   if (!drag) return;
-  drag = null; guides = [];
-  view.classList.remove('dragging', 'move');
-  invalidate(); persist();
+  const d = drag; drag = null; guides = [];
+  view.classList.remove('dragging', 'move', 'lasso');
+  if (d.type === 'screen') {
+    if (!d.moved) {
+      // clique simples numa tela do grupo: fica só ela
+      if (sel.size > 1) selectOutput(d.out.id, [d.scr.id], d.scr.id);
+    } else {
+      // soltou dentro de outra saída? transfere o grupo
+      const r = rectOf(d.scr);
+      const c = { x: d.out.x + r.x + r.w / 2, y: d.out.y + r.y + r.h / 2 };
+      const dest = state.outputs.find(o => o.id !== d.out.id && inRect(c, o));
+      if (dest) {
+        const moving = selScreens();
+        for (const s of moving) {
+          d.out.screens.splice(d.out.screens.indexOf(s), 1);
+          s.x += d.out.x - dest.x; s.y += d.out.y - dest.y;
+          dest.screens.push(s);
+        }
+        selectOutput(dest.id, moving.map(s => s.id), d.scr.id);
+        toast(`${moving.length > 1 ? moving.length + ' telas movidas' : 'Tela movida'} para ${dest.name}`);
+      }
+      persist();
+    }
+  } else if (d.type === 'output') {
+    persist();
+  } else if (d.type === 'marquee') {
+    marquee = null;
+    refreshAll();
+  }
+  invalidate();
 }
 view.addEventListener('pointerup', endDrag);
 view.addEventListener('pointercancel', endDrag);
+view.addEventListener('dblclick', e => {
+  const hit = hitTest(toWorld(e.offsetX, e.offsetY));
+  if (hit && hit.type === 'screen') { selectOutput(hit.out.id, [hit.scr.id], hit.scr.id); focusName(ed.name); }
+  else if (hit && hit.type === 'label') { selectOutput(hit.out.id, [], null); focusName(oName); }
+  else if (hit) { selectOutput(hit.out.id, [], null); fitSelected(); }
+});
 view.addEventListener('wheel', e => {
   e.preventDefault(); closeMenu();
-  const factor = Math.exp(-e.deltaY * 0.0015);
-  const ns = Math.max(0.02, Math.min(16, cam.scale * factor));
-  const p = toWorld(e.offsetX, e.offsetY);
-  cam.scale = ns;
-  cam.ox = e.offsetX - p.x * ns; cam.oy = e.offsetY - p.y * ns;
-  invalidate();
+  if (e.shiftKey) { cam.ox -= (e.deltaX || e.deltaY); invalidate(); }
+  else if (e.deltaX !== 0 && !e.ctrlKey && !e.metaKey) { cam.ox -= e.deltaX; cam.oy -= e.deltaY; invalidate(); } // dois dedos = mover
+  else zoomBy(Math.exp(-e.deltaY * 0.0015), e.offsetX, e.offsetY);                                                // roda / pinça = zoom
 }, { passive: false });
 
 function snapRect(w, h, nx, ny, xs, ys) {
@@ -664,11 +800,11 @@ function snapRect(w, h, nx, ny, xs, ys) {
   if (bestY) { ny = bestY.y; g.push({ axis: 'y', v: bestY.g }); }
   return { x: nx, y: ny, guides: g };
 }
-function snapScreen(out, s, nx, ny) {
+function snapScreen(out, s, nx, ny, exclude) {
   const r = rectOf(s);
   const xs = [0, out.w], ys = [0, out.h];
   for (const o of out.screens) {
-    if (o.id === s.id) continue;
+    if (o.id === s.id || (exclude && exclude.has(o.id))) continue;
     const q = rectOf(o); xs.push(q.x, q.x + q.w); ys.push(q.y, q.y + q.h);
   }
   return snapRect(r.w, r.h, nx, ny, xs, ys);
@@ -683,36 +819,179 @@ function snapOutput(out, nx, ny) {
   return snapRect(out.w, out.h, nx, ny, xs, ys);
 }
 
-// teclado
+// ---------- Teclado (atalhos) ----------
+const SHORTCUTS = [
+  ['Seleção', [
+    ['Clique', 'Seleciona tela / saída'], ['⇧ ou ' + MOD + ' + clique', 'Adiciona ou remove da seleção'],
+    ['Arrastar no vazio da saída', 'Laço de seleção'], [MOD + ' A', 'Selecionar todas as telas da saída'],
+    ['Tab / ⇧ Tab', 'Próxima / anterior tela'], ['Esc', 'Limpar seleção / fechar'],
+  ]],
+  ['Edição', [
+    [MOD + ' C / ' + MOD + ' X / ' + MOD + ' V', 'Copiar / recortar / colar'], [MOD + ' D', 'Duplicar'],
+    [MOD + ' Z / ' + MOD + ' ⇧ Z', 'Desfazer / refazer'], ['⌫ ou Delete', 'Remover telas selecionadas'],
+    [MOD + ' ⌫', 'Remover saída selecionada'], ['Enter ou F2', 'Renomear'],
+    ['← ↑ → ↓', 'Mover 1 px'], ['⇧ + setas', 'Mover 1 painel'], ['⌥ + setas', 'Mover 10 px'],
+    [MOD + ' ] / ' + MOD + ' [', 'Trazer para frente / enviar para trás'],
+  ]],
+  ['Criar & exportar', [
+    ['N', 'Nova tela'], ['⇧ N', 'Nova saída'], [MOD + ' E', 'Exportar PNG da saída'],
+    [MOD + ' ⇧ E', 'Exportar todas'], [MOD + ' S', 'Salvar projeto (JSON)'],
+  ]],
+  ['Vista', [
+    ['Scroll / pinça', 'Zoom no cursor'], ['Dois dedos', 'Mover a vista'], ['Espaço + arrastar', 'Mover a vista'],
+    ['+ / −', 'Zoom'], ['F ou 0', 'Ver tudo'], ['1', 'Zoom 1:1'], ['2', 'Enquadrar saída'],
+    ['Clique-direito', 'Menu de contexto'], ['?', 'Este painel'],
+  ]],
+];
 window.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeMenu(); return; }
+  const mod = IS_MAC ? e.metaKey : e.ctrlKey;
+  const k = e.key;
+  if (k === 'Escape') {
+    if (menu.classList.contains('open')) { closeMenu(); return; }
+    if (helpOpen()) { closeHelp(); return; }
+    const a = document.activeElement;
+    if (a && a !== document.body && ['input', 'select', 'textarea'].includes(a.tagName.toLowerCase())) { a.blur(); return; }
+    if (sel.size) { sel.clear(); primary = null; refreshAll(); }
+    return;
+  }
   const tag = (e.target.tagName || '').toLowerCase();
-  if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
-  if (e.key === 'f' || e.key === 'F') { fitView(); return; }
-  const s = curScr();
-  if (!s) return;
-  if ((e.metaKey || e.ctrlKey) && (e.key === 'd' || e.key === 'D')) { e.preventDefault(); duplicateScreen(); return; }
-  if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); removeScreen(); return; }
-  const stepX = e.shiftKey ? s.pw : 1, stepY = e.shiftKey ? s.ph : 1;
-  let moved = true;
-  if (e.key === 'ArrowLeft') s.x -= stepX;
-  else if (e.key === 'ArrowRight') s.x += stepX;
-  else if (e.key === 'ArrowUp') s.y -= stepY;
-  else if (e.key === 'ArrowDown') s.y += stepY;
-  else moved = false;
-  if (moved) { e.preventDefault(); syncScreenEditor(); refreshScreenList(); invalidate(); persist(); }
+  if (tag === 'input' || tag === 'select' || tag === 'textarea') {
+    if (k === 'Enter' && tag === 'input') e.target.blur();
+    return;
+  }
+  if (k === ' ') { if (!spaceDown) { spaceDown = true; view.classList.add('dragging'); } e.preventDefault(); return; }
+
+  // com modificador
+  if (mod) {
+    const K = k.toLowerCase();
+    if (K === 'a') { e.preventDefault(); selectAll(); return; }
+    if (K === 'c') { e.preventDefault(); copySel(); return; }
+    if (K === 'x') { e.preventDefault(); cutSel(); return; }
+    if (K === 'v') { e.preventDefault(); paste(); return; }
+    if (K === 'd') { e.preventDefault(); duplicateScreen(); return; }
+    if (K === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+    if (K === 'y') { e.preventDefault(); redo(); return; }
+    if (K === 's') { e.preventDefault(); saveProject(); return; }
+    if (K === 'e') { e.preventDefault(); e.shiftKey ? exportOutputs(state.outputs.slice()) : (curOut() && exportOutputs([curOut()])); return; }
+    if (k === 'Backspace') { e.preventDefault(); removeOutput(); return; }
+    if (k === ']') { e.preventDefault(); reorderSel(+1); return; }
+    if (k === '[') { e.preventDefault(); reorderSel(-1); return; }
+    return;
+  }
+  // sem modificador
+  if (k === '?' || (k === '/' && e.shiftKey)) { e.preventDefault(); toggleHelp(); return; }
+  if (k === 'f' || k === 'F' || k === '0') { fitView(); return; }
+  if (k === '1') { zoom100(); return; }
+  if (k === '2') { fitSelected(); return; }
+  if (k === '+' || k === '=') { zoomBy(1.25); return; }
+  if (k === '-' || k === '_') { zoomBy(0.8); return; }
+  if (k === 'n') { addScreen(); return; }
+  if (k === 'N') { addOutput(); return; }
+  if (k === 'Tab') { e.preventDefault(); cycleSel(e.shiftKey ? -1 : 1); return; }
+  if (k === 'Enter' || k === 'F2') { e.preventDefault(); if (curScr()) focusName(ed.name); else if (curOut()) focusName(oName); return; }
+  if (k === 'Delete' || k === 'Backspace') { e.preventDefault(); removeScreen(); return; }
+  if (k.startsWith('Arrow')) {
+    const list = selScreens(); if (!list.length) return;
+    e.preventDefault();
+    const p = curScr() || list[0];
+    const stepX = e.shiftKey ? p.pw : (e.altKey ? 10 : 1), stepY = e.shiftKey ? p.ph : (e.altKey ? 10 : 1);
+    const dx = k === 'ArrowLeft' ? -stepX : k === 'ArrowRight' ? stepX : 0;
+    const dy = k === 'ArrowUp' ? -stepY : k === 'ArrowDown' ? stepY : 0;
+    for (const s of list) { s.x += dx; s.y += dy; }
+    syncScreenEditor(); refreshScreenList(); invalidate(); persist();
+  }
 });
+window.addEventListener('keyup', e => { if (e.key === ' ') { spaceDown = false; if (!drag) view.classList.remove('dragging'); } });
+window.addEventListener('blur', () => { spaceDown = false; view.classList.remove('dragging'); });
 
 // ---------- Seleção ----------
-function selectOutput(outId, scrId) {
-  const changed = selOut !== outId || selScr !== scrId;
+function selectOutput(outId, scrIds, prim) {
   selOut = outId;
   const o = curOut();
-  selScr = o && scrId != null && o.screens.some(s => s.id === scrId) ? scrId : null;
-  if (changed) refreshAll();
+  const ids = (scrIds || []).filter(id => o && o.screens.some(s => s.id === id));
+  sel = new Set(ids);
+  primary = prim != null && sel.has(prim) ? prim : (ids.length ? ids[ids.length - 1] : null);
+  refreshAll();
+}
+function selectAll() { const o = curOut(); if (!o) return; selectOutput(o.id, o.screens.map(s => s.id), primary); }
+function cycleSel(dir) {
+  const o = curOut(); if (!o || !o.screens.length) return;
+  const i = o.screens.findIndex(s => s.id === primary);
+  const n = (i < 0 ? (dir > 0 ? 0 : o.screens.length - 1) : (i + dir + o.screens.length) % o.screens.length);
+  selectOutput(o.id, [o.screens[n].id], o.screens[n].id);
+}
+function reorderSel(dir) {
+  const o = curOut(); if (!o || !sel.size) return;
+  const moving = o.screens.filter(s => sel.has(s.id)), rest = o.screens.filter(s => !sel.has(s.id));
+  o.screens = dir > 0 ? rest.concat(moving) : moving.concat(rest);
+  refreshAll(); persist();
+  toast(dir > 0 ? 'Trazido para frente' : 'Enviado para trás');
 }
 function refreshAll() {
   refreshOutputList(); syncOutputEditor(); refreshScreenList(); syncScreenEditor(); invalidate();
+}
+
+// ---------- Clipboard interno ----------
+let clipboard = null; // { screens: [...cópias sem id], srcOut: id }
+function copySel() {
+  const list = selScreens(); if (!list.length) { toast('Nada selecionado'); return; }
+  clipboard = { screens: list.map(s => { const c = Object.assign({}, s); delete c.id; return c; }), srcOut: selOut };
+  toast(list.length > 1 ? `${list.length} telas copiadas` : 'Tela copiada');
+}
+function cutSel() {
+  const list = selScreens(); if (!list.length) return;
+  copySel(); removeScreen(false);
+  toast(list.length > 1 ? `${list.length} telas recortadas` : 'Tela recortada');
+}
+// at = {x,y} local (canto superior esquerdo do grupo); sem `at`: no lugar (outra saída) ou deslocado (mesma saída)
+function paste(at) {
+  const o = curOut(); if (!o || !clipboard || !clipboard.screens.length) { if (!clipboard) toast('Área de transferência vazia'); return; }
+  const src = clipboard.screens;
+  const b = bboxOf(src);
+  let dx = 0, dy = 0;
+  if (at) { dx = Math.round(at.x) - b.x; dy = Math.round(at.y) - b.y; }
+  else if (clipboard.srcOut === o.id) {
+    // mesma saída: encosta à direita do grupo; se não couber, embaixo
+    if (b.x + b.w * 2 <= o.w) dx = b.w; else if (b.y + b.h * 2 <= o.h) dy = b.h; else { dx = 40; dy = 40; }
+  }
+  const same = clipboard.srcOut === o.id;
+  const made = src.map(c => newScreen(o, Object.assign({}, c, { id: uid++, x: c.x + dx, y: c.y + dy, name: same && !at ? c.name + ' cópia' : c.name })));
+  o.screens.push(...made);
+  selectOutput(o.id, made.map(s => s.id), made[made.length - 1].id);
+  persist();
+  toast(made.length > 1 ? `${made.length} telas coladas` : 'Tela colada');
+}
+
+// ---------- Desfazer / refazer ----------
+const hist = { stack: [], idx: -1, max: 100 };
+function commitHistory() {
+  const snap = JSON.stringify(state);
+  if (hist.stack[hist.idx] === snap) return;
+  hist.stack.length = hist.idx + 1;
+  hist.stack.push(snap);
+  if (hist.stack.length > hist.max) hist.stack.shift();
+  hist.idx = hist.stack.length - 1;
+  updateUndoButtons();
+}
+function restoreHistory(snap) {
+  state = JSON.parse(snap);
+  let maxId = 0;
+  for (const o of state.outputs) { maxId = Math.max(maxId, o.id); for (const s of o.screens) maxId = Math.max(maxId, s.id); }
+  uid = Math.max(uid, maxId + 1);
+  const o = curOut();
+  selOut = o ? o.id : (state.outputs[0] ? state.outputs[0].id : null);
+  const keep = [...sel].filter(id => curOut() && curOut().screens.some(s => s.id === id));
+  sel = new Set(keep); if (!sel.has(primary)) primary = keep[keep.length - 1] ?? null;
+  syncOpts(); refreshAll();
+  try { localStorage.setItem(STORAGE_KEY, snap); } catch (_) {}
+  updateUndoButtons();
+}
+function undo() { if (hist.idx <= 0) { toast('Nada para desfazer'); return; } hist.idx--; restoreHistory(hist.stack[hist.idx]); toast('Desfeito'); }
+function redo() { if (hist.idx >= hist.stack.length - 1) { toast('Nada para refazer'); return; } hist.idx++; restoreHistory(hist.stack[hist.idx]); toast('Refeito'); }
+function updateUndoButtons() {
+  const u = document.getElementById('btnUndo'), r = document.getElementById('btnRedo');
+  if (u) u.disabled = hist.idx <= 0;
+  if (r) r.disabled = hist.idx >= hist.stack.length - 1;
 }
 
 // ---------- UI: saídas ----------
@@ -736,11 +1015,11 @@ function refreshOutputList() {
 }
 outListEl.addEventListener('click', e => {
   const li = e.target.closest('li[data-id]');
-  if (li) selectOutput(Number(li.dataset.id), null);
+  if (li) selectOutput(Number(li.dataset.id), [], null);
 });
 outListEl.addEventListener('dblclick', e => {
   const li = e.target.closest('li[data-id]');
-  if (li) { selectOutput(Number(li.dataset.id), null); fitSelected(); }
+  if (li) { selectOutput(Number(li.dataset.id), [], null); fitSelected(); }
 });
 function placeNewOutput(out) {
   if (!state.outputs.length) { out.x = 0; out.y = 0; return; }
@@ -753,7 +1032,7 @@ function addOutput() {
   const o = newOutput(ref ? { w: ref.w, h: ref.h, bg: ref.bg } : {});
   placeNewOutput(o);
   state.outputs.push(o);
-  selectOutput(o.id, null); persist();
+  selectOutput(o.id, [], null); persist();
   fitView();
 }
 function duplicateOutput() {
@@ -762,7 +1041,7 @@ function duplicateOutput() {
     screens: src.screens.map(s => newScreen(null, Object.assign({}, s, { id: uid++ }))) });
   placeNewOutput(o);
   state.outputs.push(o);
-  selectOutput(o.id, null); persist();
+  selectOutput(o.id, [], null); persist();
   fitView();
 }
 function removeOutput() {
@@ -771,7 +1050,8 @@ function removeOutput() {
   if (o.screens.length && !confirm(`Remover "${o.name}" e as ${o.screens.length} tela(s) dela?`)) return;
   state.outputs.splice(i, 1);
   const next = state.outputs.length ? state.outputs[Math.min(i, state.outputs.length - 1)].id : null;
-  selOut = null; selectOutput(next, null); persist();
+  selectOutput(next, [], null); persist();
+  toast(`${o.name} removida`);
 }
 function arrangeOutputs() {
   let x = 0;
@@ -810,7 +1090,8 @@ function onCanvasSize() {
   refreshAll(); persist();
 }
 cw.addEventListener('change', onCanvasSize); ch.addEventListener('change', onCanvasSize);
-cbg.addEventListener('input', () => { const o = curOut(); if (!o) return; o.bg = cbg.value; invalidate(); persist(); });
+cbg.addEventListener('input', () => { const o = curOut(); if (!o) return; o.bg = cbg.value; invalidate(); });
+cbg.addEventListener('change', persist);
 function fitOutputToContent() {
   const o = curOut(); if (!o || !o.screens.length) return;
   let maxX = 0, maxY = 0;
@@ -839,7 +1120,8 @@ function refreshScreenList() {
     const r = rectOf(s);
     const li = document.createElement('li');
     li.dataset.id = s.id;
-    if (s.id === selScr) li.classList.add('sel');
+    if (sel.has(s.id)) li.classList.add('sel');
+    if (s.id === primary) li.classList.add('prim');
     li.innerHTML = `<span class="sw"></span><span class="nm"></span><span class="sz"></span>`;
     li.querySelector('.sw').style.background = s.color;
     li.querySelector('.nm').textContent = s.name;
@@ -848,8 +1130,17 @@ function refreshScreenList() {
   }
 }
 scrListEl.addEventListener('click', e => {
-  const li = e.target.closest('li[data-id]');
-  if (li) selectOutput(selOut, Number(li.dataset.id));
+  const li = e.target.closest('li[data-id]'); if (!li) return;
+  const id = Number(li.dataset.id);
+  if (e.shiftKey || e.metaKey || e.ctrlKey) {
+    if (sel.has(id)) { sel.delete(id); if (primary === id) primary = [...sel].pop() ?? null; }
+    else { sel.add(id); primary = id; }
+    refreshAll();
+  } else selectOutput(selOut, [id], id);
+});
+scrListEl.addEventListener('dblclick', e => {
+  const li = e.target.closest('li[data-id]'); if (!li) return;
+  selectOutput(selOut, [Number(li.dataset.id)], Number(li.dataset.id)); focusName(ed.name);
 });
 function addScreen() {
   const o = curOut(); if (!o) return;
@@ -857,37 +1148,66 @@ function addScreen() {
   const last = o.screens[o.screens.length - 1];
   if (last) { const r = rectOf(last); s.x = r.x + r.w; s.y = r.y; if (s.x + s.cols * s.pw > o.w) { s.x = 0; s.y = r.y + r.h; } }
   o.screens.push(s);
-  selectOutput(o.id, s.id); refreshAll(); persist();
+  selectOutput(o.id, [s.id], s.id); persist();
 }
 function duplicateScreen() {
-  const o = curOut(), s = curScr(); if (!o || !s) return;
-  const c = newScreen(o, Object.assign({}, s, { id: uid++, name: s.name + ' cópia', color: PALETTE[o.screens.length % PALETTE.length] }));
-  const r = rectOf(s); c.x = r.x + r.w; c.y = r.y;
-  o.screens.push(c);
-  selectOutput(o.id, c.id); refreshAll(); persist();
+  const o = curOut(), list = selScreens(); if (!o || !list.length) return;
+  const b = bboxOf(list);
+  const dx = b.x + b.w * 2 <= o.w ? b.w : 0, dy = dx ? 0 : b.h;
+  const made = list.map((s, i) => newScreen(o, Object.assign({}, s, { id: uid++, name: s.name + ' cópia', x: s.x + dx, y: s.y + dy,
+    color: list.length === 1 ? PALETTE[(o.screens.length + i) % PALETTE.length] : s.color })));
+  o.screens.push(...made);
+  selectOutput(o.id, made.map(s => s.id), made[made.length - 1].id); persist();
+  toast(made.length > 1 ? `${made.length} telas duplicadas` : 'Tela duplicada');
 }
-function removeScreen() {
+function removeScreen(announce = true) {
+  const o = curOut(); if (!o || !sel.size) return;
+  const n = sel.size;
+  const idx = o.screens.findIndex(s => sel.has(s.id));
+  o.screens = o.screens.filter(s => !sel.has(s.id));
+  const next = o.screens[Math.min(idx, o.screens.length - 1)];
+  selectOutput(o.id, next ? [next.id] : [], next ? next.id : null); persist();
+  if (announce) toast(n > 1 ? `${n} telas removidas` : 'Tela removida');
+}
+function arrangeRow(onlySel) {
   const o = curOut(); if (!o) return;
-  const i = o.screens.findIndex(s => s.id === selScr); if (i < 0) return;
-  o.screens.splice(i, 1);
-  selScr = o.screens.length ? o.screens[Math.min(i, o.screens.length - 1)].id : null;
+  const list = onlySel ? selScreens().slice().sort((a, b) => a.x - b.x || a.y - b.y) : o.screens;
+  if (!list.length) return;
+  let x = onlySel ? bboxOf(list).x : 0; const y = onlySel ? bboxOf(list).y : 0;
+  for (const s of list) { s.x = x; s.y = y; x += s.cols * s.pw; }
   refreshAll(); persist();
 }
-function arrangeRow() {
+function arrangeCol(onlySel) {
   const o = curOut(); if (!o) return;
-  let x = 0; for (const s of o.screens) { s.x = x; s.y = 0; x += s.cols * s.pw; }
+  const list = onlySel ? selScreens().slice().sort((a, b) => a.y - b.y || a.x - b.x) : o.screens;
+  if (!list.length) return;
+  let y = onlySel ? bboxOf(list).y : 0; const x = onlySel ? bboxOf(list).x : 0;
+  for (const s of list) { s.x = x; s.y = y; y += s.rows * s.ph; }
   refreshAll(); persist();
 }
-function arrangeCol() {
-  const o = curOut(); if (!o) return;
-  let y = 0; for (const s of o.screens) { s.x = 0; s.y = y; y += s.rows * s.ph; }
+// alinhar: 'left','right','top','bottom','hcenter','vcenter' (na seleção) | 'outH','outV' (na saída)
+function alignSel(how) {
+  const o = curOut(), list = selScreens(); if (!o || !list.length) return;
+  const b = list.length > 1 ? bboxOf(list) : { x: 0, y: 0, w: o.w, h: o.h };
+  for (const s of list) {
+    const r = rectOf(s);
+    if (how === 'left') s.x = b.x; else if (how === 'right') s.x = b.x + b.w - r.w;
+    else if (how === 'top') s.y = b.y; else if (how === 'bottom') s.y = b.y + b.h - r.h;
+    else if (how === 'hcenter') s.x = Math.round(b.x + (b.w - r.w) / 2);
+    else if (how === 'vcenter') s.y = Math.round(b.y + (b.h - r.h) / 2);
+  }
+  if (how === 'outH' || how === 'outV') {
+    const g = bboxOf(list);
+    const dx = how === 'outH' ? Math.round((o.w - g.w) / 2) - g.x : 0, dy = how === 'outV' ? Math.round((o.h - g.h) / 2) - g.y : 0;
+    for (const s of list) { s.x += dx; s.y += dy; }
+  }
   refreshAll(); persist();
 }
 $('addScreen').addEventListener('click', addScreen);
 $('dupScreen').addEventListener('click', duplicateScreen);
-$('delScreen').addEventListener('click', removeScreen);
-$('arrangeRow').addEventListener('click', arrangeRow);
-$('arrangeCol').addEventListener('click', arrangeCol);
+$('delScreen').addEventListener('click', () => removeScreen());
+$('arrangeRow').addEventListener('click', () => arrangeRow(false));
+$('arrangeCol').addEventListener('click', () => arrangeCol(false));
 
 // ---------- UI: editor da tela selecionada ----------
 const ed = {
@@ -901,6 +1221,7 @@ function syncScreenEditor() {
   const o = curOut(), s = curScr();
   $('editor').classList.toggle('dim', !s);
   $('dupScreen').disabled = !s; $('delScreen').disabled = !s;
+  const tag = $('selTag'); if (tag) { tag.textContent = sel.size > 1 ? `+${sel.size - 1}` : ''; tag.title = sel.size > 1 ? `${sel.size} telas selecionadas — o editor mostra a principal` : ''; }
   ed.moveTo.innerHTML = '';
   for (const out of state.outputs) {
     const op = document.createElement('option'); op.value = out.id; op.textContent = out.name;
@@ -931,29 +1252,29 @@ function onEdit() {
   refreshAll(); persist();
 }
 for (const k of ['name', 'pw', 'ph', 'cols', 'rows', 'x', 'y', 'mmw', 'mmh']) ed[k].addEventListener('change', onEdit);
-ed.color.addEventListener('input', onEdit);
+ed.color.addEventListener('input', () => { const s = curScr(); if (!s) return; s.color = ed.color.value; refreshScreenList(); invalidate(); });
+ed.color.addEventListener('change', onEdit);
 ed.preset.addEventListener('change', () => {
-  const s = curScr(); if (!s || ed.preset.value === 'custom') return;
+  const list = selScreens(); if (!list.length || ed.preset.value === 'custom') return;
   const p = PANEL_PRESETS[Number(ed.preset.value)];
-  s.pw = p.pw; s.ph = p.ph; s.mmw = p.mmw; s.mmh = p.mmh;
+  for (const s of list) { s.pw = p.pw; s.ph = p.ph; s.mmw = p.mmw; s.mmh = p.mmh; } // preset vale p/ todas as selecionadas
   refreshAll(); persist();
 });
 function nextColor() {
-  const s = curScr(); if (!s) return;
-  const i = PALETTE.indexOf(s.color);
-  s.color = PALETTE[(i + 1) % PALETTE.length];
+  const list = selScreens(); if (!list.length) return;
+  for (const s of list) { const i = PALETTE.indexOf(s.color); s.color = PALETTE[(i + 1) % PALETTE.length]; }
   refreshAll(); persist();
 }
 $('nextColor').addEventListener('click', nextColor);
-function moveScreenTo(destId) {
-  const o = curOut(), s = curScr(); if (!o || !s) return;
+function moveScreensTo(destId) {
+  const o = curOut(), list = selScreens(); if (!o || !list.length) return;
   const dest = state.outputs.find(x => x.id === destId);
   if (!dest || dest.id === o.id) return;
-  o.screens.splice(o.screens.indexOf(s), 1);
-  dest.screens.push(s);
-  selectOutput(dest.id, s.id); refreshAll(); persist();
+  for (const s of list) { o.screens.splice(o.screens.indexOf(s), 1); dest.screens.push(s); }
+  selectOutput(dest.id, list.map(s => s.id), primary); persist();
+  toast(`${list.length > 1 ? list.length + ' telas movidas' : 'Tela movida'} para ${dest.name}`);
 }
-ed.moveTo.addEventListener('change', () => moveScreenTo(Number(ed.moveTo.value)));
+ed.moveTo.addEventListener('change', () => moveScreensTo(Number(ed.moveTo.value)));
 
 // ---------- UI: opções de desenho ----------
 const optMap = { checker: 'oChecker', grid: 'oGrid', diag: 'oDiag', circle: 'oCircle', label: 'oLabel', panelInfo: 'oPanelInfo', numbers: 'oNumbers', res: 'oRes' };
@@ -988,6 +1309,7 @@ async function exportOutputs(list) {
       downloadBlob(blob, `${safeName(out.name)}_${out.w}x${out.h}.png`);
       if (list.length > 1) await new Promise(r => setTimeout(r, 400));
     }
+    toast(list.length > 1 ? `${list.length} PNGs exportados` : `PNG exportado · ${list[0].w} × ${list[0].h}`);
   } catch (err) {
     console.error(err); alert('Falha ao exportar: ' + err.message);
   } finally {
@@ -1004,11 +1326,12 @@ function downloadBlob(blob, name) {
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
-
-$('saveJson').addEventListener('click', () => {
+function saveProject() {
   const data = JSON.stringify({ app: 'outputter', version: 2, state }, null, 2);
   downloadBlob(new Blob([data], { type: 'application/json' }), `outputter_${new Date().toISOString().slice(0, 10)}.json`);
-});
+  toast('Projeto salvo (JSON)');
+}
+$('saveJson').addEventListener('click', saveProject);
 $('loadJson').addEventListener('click', () => $('fileInput').click());
 $('fileInput').addEventListener('change', e => {
   const f = e.target.files && e.target.files[0];
@@ -1016,17 +1339,55 @@ $('fileInput').addEventListener('change', e => {
   if (!f) return;
   const fr = new FileReader();
   fr.onload = () => {
-    try { loadState(JSON.parse(fr.result).state); }
+    try { loadState(JSON.parse(fr.result).state); toast('Projeto aberto'); }
     catch (err) { alert('Arquivo inválido: ' + err.message); }
   };
   fr.readAsText(f);
 });
+
+// ---------- Toast (aviso curto, um elemento reutilizado) ----------
+const toastEl = $('toast');
+let toastTimer = null;
+function toast(msg) {
+  toastEl.textContent = msg; toastEl.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1600);
+}
+
+// ---------- Painel de atalhos ----------
+const helpEl = $('help');
+const helpOpen = () => helpEl.classList.contains('open');
+function openHelp() {
+  if (!helpEl.dataset.built) {
+    const box = helpEl.querySelector('.cols'); box.innerHTML = '';
+    for (const [title, rows] of SHORTCUTS) {
+      const col = document.createElement('div'); col.className = 'col';
+      col.innerHTML = '<h3></h3>'; col.querySelector('h3').textContent = title;
+      for (const [k, d] of rows) {
+        const row = document.createElement('div'); row.className = 'sc';
+        row.innerHTML = '<span class="k"></span><span class="d"></span>';
+        row.querySelector('.k').textContent = k; row.querySelector('.d').textContent = d;
+        col.appendChild(row);
+      }
+      box.appendChild(col);
+    }
+    helpEl.dataset.built = '1';
+  }
+  helpEl.classList.add('open'); helpEl.setAttribute('aria-hidden', 'false');
+}
+function closeHelp() { helpEl.classList.remove('open'); helpEl.setAttribute('aria-hidden', 'true'); }
+function toggleHelp() { helpOpen() ? closeHelp() : openHelp(); }
+helpEl.addEventListener('click', e => { if (e.target === helpEl || e.target.closest('.close')) closeHelp(); });
+$('btnHelp').addEventListener('click', e => { e.stopPropagation(); toggleHelp(); });
+$('btnUndo').addEventListener('click', undo);
+$('btnRedo').addEventListener('click', redo);
 
 // ---------- Menu de contexto MC++ ----------
 const menu = $('ctxmenu');
 const ICON = {
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12h8M12 8v8"/></svg>',
   copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="8" y="8" width="12" height="12" rx="3"/><path d="M4 16V6a2 2 0 012-2h10"/></svg>',
+  cut: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.5 15.5M8.5 8.5L20 20"/></svg>',
+  paste: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M9 12h6M9 16h4"/></svg>',
   pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>',
   frame: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V5a1 1 0 011-1h4M20 9V5a1 1 0 00-1-1h-4M4 15v4a1 1 0 001 1h4M20 15v4a1 1 0 01-1 1h-4"/></svg>',
@@ -1035,6 +1396,19 @@ const ICON = {
   move: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
   grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>',
   eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  all: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 3"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>',
+  alignL: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 3v18"/><rect x="7" y="6" width="13" height="4" rx="1"/><rect x="7" y="14" width="8" height="4" rx="1"/></svg>',
+  alignR: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 3v18"/><rect x="4" y="6" width="13" height="4" rx="1"/><rect x="9" y="14" width="8" height="4" rx="1"/></svg>',
+  alignT: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 4h18"/><rect x="6" y="7" width="4" height="13" rx="1"/><rect x="14" y="7" width="4" height="8" rx="1"/></svg>',
+  alignB: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 20h18"/><rect x="6" y="4" width="4" height="13" rx="1"/><rect x="14" y="9" width="4" height="8" rx="1"/></svg>',
+  center: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v18" stroke-dasharray="2 2"/><rect x="5" y="7" width="14" height="4" rx="1"/><rect x="8" y="14" width="8" height="4" rx="1"/></svg>',
+  row: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="8" width="5" height="8" rx="1"/><rect x="9.5" y="8" width="5" height="8" rx="1"/><rect x="16" y="8" width="5" height="8" rx="1"/></svg>',
+  col: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="8" y="3" width="8" height="5" rx="1"/><rect x="8" y="9.5" width="8" height="5" rx="1"/><rect x="8" y="16" width="8" height="5" rx="1"/></svg>',
+  front: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="9" width="12" height="12" rx="2"/><path d="M9 9V5a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2h-4"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="12" height="12" rx="2"/><path d="M15 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-8a2 2 0 012-2h4"/></svg>',
+  undo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/></svg>',
+  redo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 000 10h3"/></svg>',
+  help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 015 0c0 1.5-2.5 2-2.5 3.5M12 17h.01"/></svg>',
 };
 function closeMenu() { if (menu.classList.contains('open')) { menu.classList.remove('open'); menu.setAttribute('aria-hidden', 'true'); menu.innerHTML = ''; } }
 // items: {label, icon, kbd, danger, disabled, run} | '-' | {title}
@@ -1057,60 +1431,94 @@ function openMenu(x, y, items) {
   menu.style.top = Math.min(y, innerHeight - mh - 10) + 'px';
 }
 function focusName(input) { input.focus(); input.select(); }
-function screenMenu(out, scr) {
+const editItems = () => [
+  { label: 'Desfazer', icon: 'undo', kbd: MOD + 'Z', disabled: hist.idx <= 0, run: undo },
+  { label: 'Refazer', icon: 'redo', kbd: MOD + '⇧Z', disabled: hist.idx >= hist.stack.length - 1, run: redo },
+];
+function screenMenu(out) {
+  const list = selScreens(); const n = list.length;
   const others = state.outputs.filter(o => o.id !== out.id);
   const items = [
-    { title: scr.name },
-    { label: 'Duplicar tela', icon: 'copy', kbd: '⌘D', run: duplicateScreen },
-    { label: 'Renomear', icon: 'pen', run: () => focusName(ed.name) },
-    { label: 'Trocar cor', icon: 'color', run: nextColor },
+    { title: n > 1 ? `${n} telas selecionadas` : (curScr() ? curScr().name : 'Tela') },
+    { label: 'Copiar', icon: 'copy', kbd: MOD + 'C', run: copySel },
+    { label: 'Recortar', icon: 'cut', kbd: MOD + 'X', run: cutSel },
+    { label: 'Duplicar', icon: 'copy', kbd: MOD + 'D', run: duplicateScreen },
+    '-',
   ];
+  if (n === 1) items.push({ label: 'Renomear', icon: 'pen', kbd: '⏎', run: () => focusName(ed.name) });
+  items.push({ label: n > 1 ? 'Trocar cor de todas' : 'Trocar cor', icon: 'color', run: nextColor });
+  if (n > 1) {
+    items.push('-', { title: 'Alinhar (na seleção)' },
+      { label: 'Esquerda', icon: 'alignL', run: () => alignSel('left') },
+      { label: 'Direita', icon: 'alignR', run: () => alignSel('right') },
+      { label: 'Topo', icon: 'alignT', run: () => alignSel('top') },
+      { label: 'Base', icon: 'alignB', run: () => alignSel('bottom') },
+      { label: 'Enfileirar (sem espaço)', icon: 'row', run: () => arrangeRow(true) },
+      { label: 'Empilhar (sem espaço)', icon: 'col', run: () => arrangeCol(true) });
+  }
+  items.push('-', { title: 'Na saída' },
+    { label: 'Centralizar horizontalmente', icon: 'center', run: () => alignSel('outH') },
+    { label: 'Centralizar verticalmente', icon: 'center', run: () => alignSel('outV') },
+    { label: 'Trazer para frente', icon: 'front', kbd: MOD + ']', run: () => reorderSel(+1) },
+    { label: 'Enviar para trás', icon: 'back', kbd: MOD + '[', run: () => reorderSel(-1) });
   if (others.length) {
     items.push('-');
-    for (const o of others) items.push({ label: `Mover para ${o.name}`, icon: 'move', run: () => moveScreenTo(o.id) });
+    for (const o of others) items.push({ label: `Mover para ${o.name}`, icon: 'move', run: () => moveScreensTo(o.id) });
   }
-  items.push('-', { label: 'Remover tela', icon: 'trash', kbd: '⌫', danger: true, run: removeScreen });
+  items.push('-', ...editItems(), '-', { label: n > 1 ? `Remover ${n} telas` : 'Remover tela', icon: 'trash', kbd: '⌫', danger: true, run: () => removeScreen() });
   return items;
 }
-function outputMenu(out) {
+function outputMenu(out, at) {
   return [
     { title: out.name },
-    { label: 'Nova tela', icon: 'plus', run: addScreen },
-    { label: 'Enquadrar saída', icon: 'frame', run: fitSelected },
-    { label: 'Ajustar ao conteúdo', icon: 'grid', disabled: !out.screens.length, run: fitOutputToContent },
+    { label: 'Nova tela', icon: 'plus', kbd: 'N', run: addScreen },
+    { label: 'Colar aqui', icon: 'paste', kbd: MOD + 'V', disabled: !clipboard, run: () => paste(at) },
+    { label: 'Selecionar todas as telas', icon: 'all', kbd: MOD + 'A', disabled: !out.screens.length, run: selectAll },
     '-',
-    { label: 'Exportar PNG', icon: 'down', run: () => exportOutputs([out]) },
+    { label: 'Enquadrar saída', icon: 'frame', kbd: '2', run: fitSelected },
+    { label: 'Ajustar ao conteúdo', icon: 'grid', disabled: !out.screens.length, run: fitOutputToContent },
+    { label: 'Exportar PNG', icon: 'down', kbd: MOD + 'E', run: () => exportOutputs([out]) },
+    '-',
     { label: 'Duplicar saída', icon: 'copy', run: duplicateOutput },
     { label: 'Renomear', icon: 'pen', run: () => focusName(oName) },
-    '-',
-    { label: 'Remover saída', icon: 'trash', danger: true, run: removeOutput },
+    '-', ...editItems(), '-',
+    { label: 'Remover saída', icon: 'trash', kbd: MOD + '⌫', danger: true, run: removeOutput },
   ];
 }
 function workspaceMenu() {
   return [
-    { label: 'Nova saída', icon: 'plus', run: addOutput },
+    { label: 'Nova saída', icon: 'plus', kbd: '⇧N', run: addOutput },
     { label: 'Organizar lado a lado', icon: 'grid', disabled: !state.outputs.length, run: arrangeOutputs },
     { label: 'Ver tudo', icon: 'eye', kbd: 'F', run: fitView },
     '-',
-    { label: 'Exportar todas as saídas', icon: 'down', disabled: !state.outputs.length, run: () => exportOutputs(state.outputs.slice()) },
+    { label: 'Exportar todas as saídas', icon: 'down', kbd: MOD + '⇧E', disabled: !state.outputs.length, run: () => exportOutputs(state.outputs.slice()) },
+    '-', ...editItems(), '-',
+    { label: 'Atalhos de teclado', icon: 'help', kbd: '?', run: openHelp },
   ];
 }
 view.addEventListener('contextmenu', e => {
   e.preventDefault();
-  const hit = hitTest(toWorld(e.offsetX, e.offsetY));
-  if (hit && hit.type === 'screen') { selectOutput(hit.out.id, hit.scr.id); openMenu(e.clientX, e.clientY, screenMenu(hit.out, hit.scr)); }
-  else if (hit) { selectOutput(hit.out.id, null); openMenu(e.clientX, e.clientY, outputMenu(hit.out)); }
-  else openMenu(e.clientX, e.clientY, workspaceMenu());
+  const p = toWorld(e.offsetX, e.offsetY);
+  const hit = hitTest(p);
+  if (hit && hit.type === 'screen') {
+    if (hit.out.id !== selOut || !sel.has(hit.scr.id)) selectOutput(hit.out.id, [hit.scr.id], hit.scr.id);
+    openMenu(e.clientX, e.clientY, screenMenu(hit.out));
+  } else if (hit) {
+    selectOutput(hit.out.id, [], null);
+    openMenu(e.clientX, e.clientY, outputMenu(hit.out, { x: p.x - hit.out.x, y: p.y - hit.out.y }));
+  } else openMenu(e.clientX, e.clientY, workspaceMenu());
 });
 outListEl.addEventListener('contextmenu', e => {
   const li = e.target.closest('li[data-id]'); if (!li) return;
-  e.preventDefault(); selectOutput(Number(li.dataset.id), null);
+  e.preventDefault(); selectOutput(Number(li.dataset.id), [], null);
   openMenu(e.clientX, e.clientY, outputMenu(curOut()));
 });
 scrListEl.addEventListener('contextmenu', e => {
   const li = e.target.closest('li[data-id]'); if (!li) return;
-  e.preventDefault(); selectOutput(selOut, Number(li.dataset.id));
-  openMenu(e.clientX, e.clientY, screenMenu(curOut(), curScr()));
+  e.preventDefault();
+  const id = Number(li.dataset.id);
+  if (!sel.has(id)) selectOutput(selOut, [id], id);
+  openMenu(e.clientX, e.clientY, screenMenu(curOut()));
 });
 document.addEventListener('click', closeMenu);
 document.addEventListener('scroll', closeMenu, { passive: true, capture: true });
@@ -1138,6 +1546,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', invalidate
 
 // ---------- Persistência local ----------
 function persist() {
+  commitHistory();
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) { /* sem storage: segue em memória */ }
 }
 function loadState(raw) {
@@ -1155,14 +1564,14 @@ function loadState(raw) {
   }
   for (const o of st.outputs) { o.id = uid++; for (const s of o.screens) s.id = uid++; }
   state = st;
+  hist.stack = []; hist.idx = -1;
   selOut = state.outputs.length ? state.outputs[0].id : null;
-  selScr = null;
+  sel = new Set(); primary = null;
   syncOpts(); refreshAll(); fitView(); persist();
 }
 
 // ---------- Boot ----------
 (function boot() {
-  // tema salvo
   let th = '';
   try { th = localStorage.getItem(THEME_KEY) || ''; } catch (_) {}
   const tb = themeSeg.btns.find(b => b.dataset.th === th) || themeSeg.btns[0];
