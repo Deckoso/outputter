@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pixel Map LED</title>
+<style>
+  :root{
+    --bg:#1b1b1e; --panel:#242428; --panel2:#2c2c31; --line:#3a3a41;
+    --text:#e8e8ea; --muted:#9a9aa3; --accent:#2f80ed; --danger:#e05656;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
+    font:13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;overflow:hidden}
+  #app{display:grid;grid-template-columns:320px 1fr;height:100vh}
+  aside{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;display:flex;flex-direction:column}
+  section{padding:12px 14px;border-bottom:1px solid var(--line)}
+  h1{font-size:15px;margin:0 0 2px;font-weight:600}
+  h1 small{color:var(--muted);font-weight:400;margin-left:6px}
+  h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;font-weight:600}
+  .row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+  .row label{flex:1;color:var(--muted)}
+  .row.two > *{flex:1}
+  input[type=number],input[type=text],select{
+    width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:5px;padding:5px 7px;font:inherit;min-width:0}
+  input[type=number]{width:74px}
+  input[type=color]{width:34px;height:26px;border:1px solid var(--line);border-radius:5px;background:var(--bg);padding:2px;cursor:pointer}
+  input:focus,select:focus{outline:1px solid var(--accent);border-color:var(--accent)}
+  button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:5px;padding:6px 10px;font:inherit;cursor:pointer;white-space:nowrap}
+  button:hover{background:#35353b}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.primary:hover{background:#3d8cf0}
+  button.danger{color:var(--danger)}
+  button:disabled{opacity:.5;cursor:default}
+  button.sm{padding:3px 8px;font-size:12px}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  .btns button{flex:1}
+  .chk{display:flex;align-items:center;gap:6px;margin:3px 0;cursor:pointer;user-select:none}
+  .chk input{margin:0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px}
+  #screenList{list-style:none;margin:0 0 8px;padding:0;max-height:210px;overflow-y:auto}
+  #screenList li{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:5px;cursor:pointer;border:1px solid transparent}
+  #screenList li:hover{background:var(--panel2)}
+  #screenList li.sel{background:var(--panel2);border-color:var(--accent)}
+  #screenList .sw{width:14px;height:14px;border-radius:3px;flex:none}
+  #screenList .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #screenList .sz{color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
+  .info{color:var(--muted);font-size:12px;margin-top:4px;font-variant-numeric:tabular-nums}
+  .warn{color:#f0b24a;font-size:12px;margin-top:4px}
+  .empty{color:var(--muted);font-style:italic;padding:6px 8px}
+  main{position:relative;overflow:hidden;background:#141416}
+  #view{position:absolute;inset:0;width:100%;height:100%;cursor:grab;touch-action:none;display:block}
+  #view.dragging{cursor:grabbing}
+  #view.move{cursor:move}
+  #hud{position:absolute;left:12px;bottom:12px;background:rgba(0,0,0,.6);padding:5px 9px;border-radius:5px;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;pointer-events:none}
+  #topbar{position:absolute;right:12px;top:12px;display:flex;gap:6px}
+  #topbar button{background:rgba(36,36,40,.9)}
+  .hint{color:var(--muted);font-size:11px;margin-top:8px;line-height:1.5}
+  kbd{background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:0 4px;font-size:11px}
+  .flex1{flex:1}
+</style>
+</head>
+<body>
+<div id="app">
+<aside>
+  <section>
+    <h1>Pixel Map LED <small>v1.0</small></h1>
+    <div class="info">Monte as telas painel por painel e exporte o mapa na resolução exata.</div>
+  </section>
+
+  <section>
+    <h2>Canvas (saída)</h2>
+    <div class="row">
+      <select id="canvasPreset">
+        <option value="1920x1080">1920 × 1080 (Full HD)</option>
+        <option value="3840x1080">3840 × 1080 (2× FHD lado a lado)</option>
+        <option value="3840x2160">3840 × 2160 (4K UHD)</option>
+        <option value="4096x2160">4096 × 2160 (DCI 4K)</option>
+        <option value="2560x1440">2560 × 1440</option>
+        <option value="1280x720">1280 × 720</option>
+        <option value="custom">Personalizado</option>
+      </select>
+    </div>
+    <div class="row two">
+      <input type="number" id="cw" min="1" max="16384" step="1" title="Largura">
+      <span style="color:var(--muted)">×</span>
+      <input type="number" id="ch" min="1" max="16384" step="1" title="Altura">
+      <input type="color" id="cbg" title="Cor de fundo">
+    </div>
+    <div class="btns">
+      <button id="fitCanvas" class="sm" title="Redimensiona o canvas para envolver todas as telas">Ajustar ao conteúdo</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Telas</h2>
+    <ul id="screenList"></ul>
+    <div class="btns">
+      <button id="addScreen" class="primary">+ Nova tela</button>
+      <button id="dupScreen" class="sm" title="Duplicar tela selecionada (⌘D)">Duplicar</button>
+      <button id="delScreen" class="sm danger" title="Remover tela selecionada (Delete)">Remover</button>
+    </div>
+    <div class="btns" style="margin-top:6px">
+      <button id="arrangeRow" class="sm" title="Enfileira todas as telas lado a lado, sem espaço">Enfileirar</button>
+      <button id="arrangeCol" class="sm" title="Empilha todas as telas de cima para baixo">Empilhar</button>
+    </div>
+  </section>
+
+  <section id="editor">
+    <h2>Tela selecionada</h2>
+    <div class="row"><label>Nome</label><input type="text" id="sName" style="width:170px"></div>
+    <div class="row"><label>Painel</label>
+      <select id="sPreset" style="width:170px"></select>
+    </div>
+    <div class="row"><label>Pixels por painel</label>
+      <input type="number" id="sPw" min="1" max="4096" title="Largura do painel em pixels">
+      <span style="color:var(--muted)">×</span>
+      <input type="number" id="sPh" min="1" max="4096" title="Altura do painel em pixels">
+    </div>
+    <div class="row"><label>Painéis (col × lin)</label>
+      <input type="number" id="sCols" min="1" max="500">
+      <span style="color:var(--muted)">×</span>
+      <input type="number" id="sRows" min="1" max="500">
+    </div>
+    <div class="row"><label>Posição X, Y</label>
+      <input type="number" id="sX" step="1">
+      <input type="number" id="sY" step="1">
+    </div>
+    <div class="row"><label>Cor</label>
+      <input type="color" id="sColor">
+      <button id="nextColor" class="sm" title="Próxima cor da paleta">Trocar</button>
+    </div>
+    <div class="row"><label>Módulo físico (mm)</label>
+      <input type="number" id="sMmW" min="1" step="1" title="Largura física do painel">
+      <span style="color:var(--muted)">×</span>
+      <input type="number" id="sMmH" min="1" step="1" title="Altura física do painel">
+    </div>
+    <div class="info" id="sInfo"></div>
+    <div class="warn" id="sWarn"></div>
+  </section>
+
+  <section>
+    <h2>Desenho</h2>
+    <div class="grid2">
+      <label class="chk"><input type="checkbox" id="oChecker"> Xadrez por painel</label>
+      <label class="chk"><input type="checkbox" id="oGrid"> Grade de painéis</label>
+      <label class="chk"><input type="checkbox" id="oDiag"> Diagonais</label>
+      <label class="chk"><input type="checkbox" id="oCircle"> Círculo</label>
+      <label class="chk"><input type="checkbox" id="oLabel"> Etiqueta central</label>
+      <label class="chk"><input type="checkbox" id="oPanelInfo"> Painéis na etiqueta</label>
+      <label class="chk"><input type="checkbox" id="oNumbers"> Numerar painéis</label>
+      <label class="chk"><input type="checkbox" id="oRes"> Resolução no canto</label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Exportar</h2>
+    <div class="btns">
+      <button id="exportPng" class="primary">Exportar PNG</button>
+    </div>
+    <div class="btns" style="margin-top:6px">
+      <button id="saveJson" class="sm">Salvar projeto</button>
+      <button id="loadJson" class="sm">Abrir projeto</button>
+      <input type="file" id="fileInput" accept="application/json,.json" hidden>
+    </div>
+    <div class="hint">
+      Arraste as telas no canvas (com snap nas bordas). Scroll = zoom, arrastar o fundo = mover a vista.<br>
+      <kbd>←↑→↓</kbd> move 1 px · <kbd>⇧</kbd> move 1 painel · <kbd>Delete</kbd> remove · <kbd>⌘D</kbd> duplica · <kbd>F</kbd> ajusta a vista
+    </div>
+  </section>
+  <div class="flex1"></div>
+</aside>
+
+<main>
+  <canvas id="view"></canvas>
+  <div id="topbar">
+    <button id="fitView" class="sm" title="Ajustar vista (F)">Ajustar vista</button>
+    <button id="zoom100" class="sm" title="Zoom 1:1">1:1</button>
+  </div>
+  <div id="hud"></div>
+</main>
+</div>
+
+<script>
+'use strict';
+/* =====================================================================
+   Pixel Map LED — gerador de mapa de pixels para painéis de LED
+   Arquivo único, sem dependências. Estado em memória + autosave local.
+   ===================================================================== */
+
+// ---------- Presets de painel (px por módulo; todos editáveis) ----------
+const PANEL_PRESETS = [
+  { label: '128 × 128 — P3.91 (500 mm)',        pw: 128, ph: 128, mmw: 500, mmh: 500 },
+  { label: '104 × 104 — P4.81 (500 mm)',        pw: 104, ph: 104, mmw: 500, mmh: 500 },
+  { label: '168 × 168 — P2.97 (500 mm)',        pw: 168, ph: 168, mmw: 500, mmh: 500 },
+  { label: '192 × 192 — P2.6 (500 mm)',         pw: 192, ph: 192, mmw: 500, mmh: 500 },
+  { label: '200 × 200 — P2.5 (500 mm)',         pw: 200, ph: 200, mmw: 500, mmh: 500 },
+  { label: '256 × 256 — P1.95 (500 mm)',        pw: 256, ph: 256, mmw: 500, mmh: 500 },
+  { label: '64 × 64 — P7.8 (500 mm)',           pw: 64,  ph: 64,  mmw: 500, mmh: 500 },
+  { label: '128 × 256 — P3.91 (500 × 1000 mm)', pw: 128, ph: 256, mmw: 500, mmh: 1000 },
+  { label: '168 × 336 — P2.97 (500 × 1000 mm)', pw: 168, ph: 336, mmw: 500, mmh: 1000 },
+  { label: '192 × 384 — P2.6 (500 × 1000 mm)',  pw: 192, ph: 384, mmw: 500, mmh: 1000 },
+  { label: '160 × 160 — P4 (640 mm)',           pw: 160, ph: 160, mmw: 640, mmh: 640 },
+  { label: '192 × 192 — P5 (960 mm)',           pw: 192, ph: 192, mmw: 960, mmh: 960 },
+  { label: '64 × 32 — P10 (640 × 320 mm)',      pw: 64,  ph: 32,  mmw: 640, mmh: 320 },
+];
+
+// Paleta na ordem das cores do Chaser/Resolume (verde, roxo, vermelho, ciano, ...)
+const PALETTE = ['#8bd400','#7d1fff','#ff1616','#1de0e0','#ffd400','#ff7a00','#ff2fd6','#2f6bff','#00c853','#b388ff'];
+
+const STORAGE_KEY = 'pixelmap-led-v1';
+
+// ---------- Estado ----------
+let state = defaultState();
+let selectedId = null;
+let uid = 1;
+
+function defaultState() {
+  return {
+    canvas: { w: 1920, h: 1080, bg: '#000000' },
+    opts: { checker: true, grid: true, diag: true, circle: true, label: true, panelInfo: true, numbers: false, res: true },
+    screens: []
+  };
+}
+function newScreen(over = {}) {
+  const idx = state.screens.length;
+  const p = PANEL_PRESETS[0];
+  return Object.assign({
+    id: uid++, name: 'Tela ' + (idx + 1),
+    pw: p.pw, ph: p.ph, mmw: p.mmw, mmh: p.mmh,
+    cols: 8, rows: 6, x: 0, y: 0,
+    color: PALETTE[idx % PALETTE.length]
+  }, over);
+}
+const rectOf = s => ({ x: s.x, y: s.y, w: s.cols * s.pw, h: s.rows * s.ph });
+const selected = () => state.screens.find(s => s.id === selectedId) || null;
+
+// ---------- Cores ----------
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function shade(hex, amt) { // amt negativo escurece, positivo clareia (0..1)
+  const [r, g, b] = hexToRgb(hex);
+  const f = v => Math.max(0, Math.min(255, Math.round(amt < 0 ? v * (1 + amt) : v + (255 - v) * amt)));
+  return `rgb(${f(r)},${f(g)},${f(b)})`;
+}
+
+// ---------- Renderização (usada pela vista e pela exportação) ----------
+function drawMap(ctx, st) {
+  const { w, h, bg } = st.canvas;
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+  for (const s of st.screens) drawScreen(ctx, s, st.opts);
+  if (st.opts.res) drawResLabel(ctx, w, h);
+}
+
+function drawScreen(ctx, s, o) {
+  const r = rectOf(s);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(r.x, r.y, r.w, r.h); ctx.clip();
+
+  // base
+  ctx.fillStyle = s.color;
+  ctx.fillRect(r.x, r.y, r.w, r.h);
+
+  // xadrez: um painel = uma casa
+  if (o.checker) {
+    ctx.fillStyle = shade(s.color, -0.28);
+    for (let row = 0; row < s.rows; row++)
+      for (let col = 0; col < s.cols; col++)
+        if ((row + col) % 2 === 1) ctx.fillRect(r.x + col * s.pw, r.y + row * s.ph, s.pw, s.ph);
+  }
+
+  // grade de painéis
+  if (o.grid) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let col = 1; col < s.cols; col++) { const x = r.x + col * s.pw + 0.5; ctx.moveTo(x, r.y); ctx.lineTo(x, r.y + r.h); }
+    for (let row = 1; row < s.rows; row++) { const y = r.y + row * s.ph + 0.5; ctx.moveTo(r.x, y); ctx.lineTo(r.x + r.w, y); }
+    ctx.stroke();
+  }
+
+  // numeração de painéis (linha.coluna, a partir de 1)
+  if (o.numbers) {
+    const fs = Math.max(6, Math.min(s.pw, s.ph) * 0.22);
+    ctx.font = `${fs}px -apple-system, Helvetica, Arial, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    for (let row = 0; row < s.rows; row++)
+      for (let col = 0; col < s.cols; col++)
+        ctx.fillText(`${row + 1}.${col + 1}`, r.x + col * s.pw + fs * 0.35, r.y + row * s.ph + fs * 0.3);
+  }
+
+  // diagonais e círculo
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+  ctx.lineWidth = 1;
+  if (o.diag) {
+    ctx.beginPath();
+    ctx.moveTo(r.x, r.y); ctx.lineTo(r.x + r.w, r.y + r.h);
+    ctx.moveTo(r.x + r.w, r.y); ctx.lineTo(r.x, r.y + r.h);
+    ctx.stroke();
+  }
+  if (o.circle) {
+    ctx.beginPath();
+    ctx.arc(r.x + r.w / 2, r.y + r.h / 2, Math.min(r.w, r.h) / 2 - 1, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // etiqueta central
+  if (o.label) {
+    const base = Math.max(9, Math.min(64, Math.min(r.w, r.h) * 0.075));
+    const lines = [
+      { t: s.name, f: `bold ${base}px -apple-system, Helvetica, Arial, sans-serif`, sz: base },
+      { t: `${r.x}, ${r.y} // ${r.w} x ${r.h}`, f: `${base * 0.62}px -apple-system, Helvetica, Arial, sans-serif`, sz: base * 0.62 },
+    ];
+    if (o.panelInfo) lines.push({ t: `${s.cols} × ${s.rows} painéis de ${s.pw} × ${s.ph}`, f: `${base * 0.5}px -apple-system, Helvetica, Arial, sans-serif`, sz: base * 0.5 });
+    const pad = base * 0.4, gap = base * 0.25;
+    let maxW = 0, totalH = 0;
+    for (const l of lines) { ctx.font = l.f; maxW = Math.max(maxW, ctx.measureText(l.t).width); totalH += l.sz; }
+    totalH += gap * (lines.length - 1);
+    const bw = maxW + pad * 2, bh = totalH + pad * 2;
+    const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+    ctx.fillStyle = 'rgba(0,0,0,0.9)';
+    ctx.fillRect(Math.round(cx - bw / 2), Math.round(cy - bh / 2), Math.round(bw), Math.round(bh));
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    let y = cy - bh / 2 + pad;
+    for (const l of lines) { ctx.font = l.f; ctx.fillText(l.t, cx, y); y += l.sz + gap; }
+  }
+  ctx.restore();
+}
+
+function drawResLabel(ctx, w, h) {
+  const fs = Math.max(12, Math.min(48, h * 0.04));
+  ctx.font = `bold ${fs}px -apple-system, Helvetica, Arial, sans-serif`;
+  const t = `${w} x ${h}`;
+  const tw = ctx.measureText(t).width, pad = fs * 0.4;
+  ctx.fillStyle = 'rgba(0,0,0,0.9)';
+  ctx.fillRect(w - tw - pad * 2 - fs * 0.5, h - fs - pad * 2 - fs * 0.5, tw + pad * 2, fs + pad * 2);
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText(t, w - tw - pad - fs * 0.5, h - fs - pad - fs * 0.5 + fs * 0.05);
+}
+
+// ---------- Vista (canvas de tela, com zoom/pan) ----------
+const view = document.getElementById('view');
+const vctx = view.getContext('2d');
+const hud = document.getElementById('hud');
+let vw = 0, vh = 0, dpr = 1;
+const cam = { scale: 0.5, ox: 0, oy: 0 }; // canvas px -> tela: sx = x*scale + ox
+let guides = [];   // linhas de snap ativas [{axis:'x'|'y', v}]
+let dirty = false;
+
+function resizeView() {
+  const rect = view.parentElement.getBoundingClientRect();
+  dpr = window.devicePixelRatio || 1;
+  vw = Math.max(1, Math.floor(rect.width)); vh = Math.max(1, Math.floor(rect.height));
+  view.width = Math.floor(vw * dpr); view.height = Math.floor(vh * dpr);
+  invalidate();
+}
+function fitView() {
+  const { w, h } = state.canvas;
+  const m = 40;
+  cam.scale = Math.min((vw - m * 2) / w, (vh - m * 2) / h);
+  cam.ox = (vw - w * cam.scale) / 2; cam.oy = (vh - h * cam.scale) / 2;
+  invalidate();
+}
+function invalidate() { if (!dirty) { dirty = true; requestAnimationFrame(paint); } }
+function paint() {
+  dirty = false;
+  vctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  vctx.fillStyle = '#141416'; vctx.fillRect(0, 0, vw, vh);
+  vctx.setTransform(dpr * cam.scale, 0, 0, dpr * cam.scale, dpr * cam.ox, dpr * cam.oy);
+  vctx.imageSmoothingEnabled = cam.scale < 1;
+  // sombra/borda do canvas
+  vctx.save();
+  vctx.beginPath(); vctx.rect(0, 0, state.canvas.w, state.canvas.h); vctx.clip();
+  drawMap(vctx, state);
+  vctx.restore();
+  vctx.strokeStyle = 'rgba(255,255,255,0.25)'; vctx.lineWidth = 1 / cam.scale;
+  vctx.strokeRect(0, 0, state.canvas.w, state.canvas.h);
+  // seleção
+  const s = selected();
+  if (s) {
+    const r = rectOf(s);
+    vctx.strokeStyle = '#fff'; vctx.lineWidth = 2 / cam.scale; vctx.setLineDash([6 / cam.scale, 4 / cam.scale]);
+    vctx.strokeRect(r.x, r.y, r.w, r.h);
+    vctx.setLineDash([]);
+  }
+  // guias de snap
+  if (guides.length) {
+    vctx.strokeStyle = '#ff3fa4'; vctx.lineWidth = 1 / cam.scale;
+    vctx.beginPath();
+    for (const g of guides) {
+      if (g.axis === 'x') { vctx.moveTo(g.v, -1e5); vctx.lineTo(g.v, 1e5); }
+      else { vctx.moveTo(-1e5, g.v); vctx.lineTo(1e5, g.v); }
+    }
+    vctx.stroke();
+  }
+  hud.textContent = `${state.canvas.w} × ${state.canvas.h} px · zoom ${(cam.scale * 100).toFixed(0)}% · ${state.screens.length} tela(s)`;
+}
+
+// ---------- Interação no canvas ----------
+const toCanvas = (sx, sy) => ({ x: (sx - cam.ox) / cam.scale, y: (sy - cam.oy) / cam.scale });
+function hitTest(p) {
+  for (let i = state.screens.length - 1; i >= 0; i--) {
+    const r = rectOf(state.screens[i]);
+    if (p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h) return state.screens[i];
+  }
+  return null;
+}
+let drag = null; // {type:'pan'|'move', sx, sy, ox, oy, screen, x0, y0}
+view.addEventListener('pointerdown', e => {
+  if (e.button !== 0 && e.button !== 1) return;
+  view.setPointerCapture(e.pointerId);
+  const p = toCanvas(e.offsetX, e.offsetY);
+  const hit = e.button === 0 ? hitTest(p) : null;
+  if (hit) {
+    selectScreen(hit.id);
+    drag = { type: 'move', sx: e.offsetX, sy: e.offsetY, screen: hit, x0: hit.x, y0: hit.y };
+    view.classList.add('move');
+  } else {
+    drag = { type: 'pan', sx: e.offsetX, sy: e.offsetY, ox: cam.ox, oy: cam.oy };
+    view.classList.add('dragging');
+  }
+});
+view.addEventListener('pointermove', e => {
+  if (!drag) return;
+  if (drag.type === 'pan') {
+    cam.ox = drag.ox + (e.offsetX - drag.sx); cam.oy = drag.oy + (e.offsetY - drag.sy);
+  } else {
+    const s = drag.screen;
+    let nx = Math.round(drag.x0 + (e.offsetX - drag.sx) / cam.scale);
+    let ny = Math.round(drag.y0 + (e.offsetY - drag.sy) / cam.scale);
+    const snapped = e.altKey ? { x: nx, y: ny, guides: [] } : snapPosition(s, nx, ny);
+    s.x = snapped.x; s.y = snapped.y; guides = snapped.guides;
+    syncEditor(); refreshList();
+  }
+  invalidate();
+});
+function endDrag(e) {
+  if (!drag) return;
+  drag = null; guides = [];
+  view.classList.remove('dragging', 'move');
+  invalidate(); persist();
+}
+view.addEventListener('pointerup', endDrag);
+view.addEventListener('pointercancel', endDrag);
+view.addEventListener('wheel', e => {
+  e.preventDefault();
+  const factor = Math.exp(-e.deltaY * 0.0015);
+  const ns = Math.max(0.02, Math.min(16, cam.scale * factor));
+  const p = toCanvas(e.offsetX, e.offsetY);
+  cam.scale = ns;
+  cam.ox = e.offsetX - p.x * ns; cam.oy = e.offsetY - p.y * ns;
+  invalidate();
+}, { passive: false });
+
+// snap nas bordas do canvas e das outras telas
+function snapPosition(s, nx, ny) {
+  const th = 8 / cam.scale;
+  const r = rectOf(s);
+  const xs = [0, state.canvas.w], ys = [0, state.canvas.h];
+  for (const o of state.screens) {
+    if (o.id === s.id) continue;
+    const q = rectOf(o);
+    xs.push(q.x, q.x + q.w); ys.push(q.y, q.y + q.h);
+  }
+  const g = [];
+  let bestX = null, bestY = null, dX = th, dY = th;
+  for (const v of xs) {
+    const d1 = Math.abs(nx - v), d2 = Math.abs(nx + r.w - v);
+    if (d1 < dX) { dX = d1; bestX = { x: v, g: v }; }
+    if (d2 < dX) { dX = d2; bestX = { x: v - r.w, g: v }; }
+  }
+  for (const v of ys) {
+    const d1 = Math.abs(ny - v), d2 = Math.abs(ny + r.h - v);
+    if (d1 < dY) { dY = d1; bestY = { y: v, g: v }; }
+    if (d2 < dY) { dY = d2; bestY = { y: v - r.h, g: v }; }
+  }
+  if (bestX) { nx = bestX.x; g.push({ axis: 'x', v: bestX.g }); }
+  if (bestY) { ny = bestY.y; g.push({ axis: 'y', v: bestY.g }); }
+  return { x: nx, y: ny, guides: g };
+}
+
+// teclado
+window.addEventListener('keydown', e => {
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+  const s = selected();
+  if (e.key === 'f' || e.key === 'F') { fitView(); return; }
+  if (!s) return;
+  if ((e.metaKey || e.ctrlKey) && (e.key === 'd' || e.key === 'D')) { e.preventDefault(); duplicateSelected(); return; }
+  if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); removeSelected(); return; }
+  const stepX = e.shiftKey ? s.pw : 1, stepY = e.shiftKey ? s.ph : 1;
+  let moved = true;
+  if (e.key === 'ArrowLeft') s.x -= stepX;
+  else if (e.key === 'ArrowRight') s.x += stepX;
+  else if (e.key === 'ArrowUp') s.y -= stepY;
+  else if (e.key === 'ArrowDown') s.y += stepY;
+  else moved = false;
+  if (moved) { e.preventDefault(); syncEditor(); refreshList(); invalidate(); persist(); }
+});
+
+// ---------- UI: canvas ----------
+const $ = id => document.getElementById(id);
+const canvasPreset = $('canvasPreset'), cw = $('cw'), ch = $('ch'), cbg = $('cbg');
+canvasPreset.addEventListener('change', () => {
+  if (canvasPreset.value === 'custom') return;
+  const [w, h] = canvasPreset.value.split('x').map(Number);
+  state.canvas.w = w; state.canvas.h = h;
+  syncCanvasUI(); fitView(); persist(); syncEditor();
+});
+function onCanvasSize() {
+  state.canvas.w = clampInt(cw.value, 1, 16384, state.canvas.w);
+  state.canvas.h = clampInt(ch.value, 1, 16384, state.canvas.h);
+  syncCanvasUI(); invalidate(); persist(); syncEditor();
+}
+cw.addEventListener('change', onCanvasSize); ch.addEventListener('change', onCanvasSize);
+cbg.addEventListener('input', () => { state.canvas.bg = cbg.value; invalidate(); persist(); });
+$('fitCanvas').addEventListener('click', () => {
+  if (!state.screens.length) return;
+  let maxX = 0, maxY = 0;
+  for (const s of state.screens) { const r = rectOf(s); maxX = Math.max(maxX, r.x + r.w); maxY = Math.max(maxY, r.y + r.h); }
+  state.canvas.w = Math.max(1, maxX); state.canvas.h = Math.max(1, maxY);
+  syncCanvasUI(); fitView(); persist(); syncEditor();
+});
+function syncCanvasUI() {
+  cw.value = state.canvas.w; ch.value = state.canvas.h; cbg.value = state.canvas.bg;
+  const key = `${state.canvas.w}x${state.canvas.h}`;
+  canvasPreset.value = [...canvasPreset.options].some(o => o.value === key) ? key : 'custom';
+}
+function clampInt(v, min, max, fallback) {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, n));
+}
+
+// ---------- UI: lista de telas ----------
+const listEl = $('screenList');
+function refreshList() {
+  listEl.innerHTML = '';
+  if (!state.screens.length) {
+    const li = document.createElement('li'); li.className = 'empty'; li.textContent = 'Nenhuma tela. Clique em "+ Nova tela".';
+    li.style.cursor = 'default'; listEl.appendChild(li); return;
+  }
+  for (const s of state.screens) {
+    const r = rectOf(s);
+    const li = document.createElement('li');
+    li.dataset.id = s.id;
+    if (s.id === selectedId) li.classList.add('sel');
+    li.innerHTML = `<span class="sw"></span><span class="nm"></span><span class="sz"></span>`;
+    li.querySelector('.sw').style.background = s.color;
+    li.querySelector('.nm').textContent = s.name;
+    li.querySelector('.sz').textContent = `${r.w}×${r.h}`;
+    listEl.appendChild(li);
+  }
+}
+listEl.addEventListener('click', e => {
+  const li = e.target.closest('li[data-id]');
+  if (li) selectScreen(Number(li.dataset.id));
+});
+function selectScreen(id) {
+  if (selectedId === id) return;
+  selectedId = id; refreshList(); syncEditor(); invalidate();
+}
+$('addScreen').addEventListener('click', () => {
+  // posiciona à direita da última tela, se couber; senão no canto
+  const s = newScreen();
+  const last = state.screens[state.screens.length - 1];
+  if (last) { const r = rectOf(last); s.x = r.x + r.w; s.y = r.y; if (s.x + s.cols * s.pw > state.canvas.w) { s.x = 0; s.y = r.y + r.h; } }
+  state.screens.push(s);
+  selectedId = s.id; refreshList(); syncEditor(); invalidate(); persist();
+});
+function duplicateSelected() {
+  const s = selected(); if (!s) return;
+  const c = newScreen(Object.assign({}, s, { id: uid++, name: s.name + ' cópia', color: PALETTE[state.screens.length % PALETTE.length] }));
+  const r = rectOf(s); c.x = r.x + r.w; c.y = r.y;
+  state.screens.push(c);
+  selectedId = c.id; refreshList(); syncEditor(); invalidate(); persist();
+}
+function removeSelected() {
+  const i = state.screens.findIndex(s => s.id === selectedId); if (i < 0) return;
+  state.screens.splice(i, 1);
+  selectedId = state.screens.length ? state.screens[Math.min(i, state.screens.length - 1)].id : null;
+  refreshList(); syncEditor(); invalidate(); persist();
+}
+$('dupScreen').addEventListener('click', duplicateSelected);
+$('delScreen').addEventListener('click', removeSelected);
+$('arrangeRow').addEventListener('click', () => {
+  let x = 0; for (const s of state.screens) { s.x = x; s.y = 0; x += s.cols * s.pw; }
+  syncEditor(); refreshList(); invalidate(); persist();
+});
+$('arrangeCol').addEventListener('click', () => {
+  let y = 0; for (const s of state.screens) { s.x = 0; s.y = y; y += s.rows * s.ph; }
+  syncEditor(); refreshList(); invalidate(); persist();
+});
+
+// ---------- UI: editor da tela selecionada ----------
+const ed = {
+  name: $('sName'), preset: $('sPreset'), pw: $('sPw'), ph: $('sPh'), cols: $('sCols'), rows: $('sRows'),
+  x: $('sX'), y: $('sY'), color: $('sColor'), mmw: $('sMmW'), mmh: $('sMmH'), info: $('sInfo'), warn: $('sWarn')
+};
+PANEL_PRESETS.forEach((p, i) => { const o = document.createElement('option'); o.value = i; o.textContent = p.label; ed.preset.appendChild(o); });
+{ const o = document.createElement('option'); o.value = 'custom'; o.textContent = 'Personalizado'; ed.preset.appendChild(o); }
+
+function syncEditor() {
+  const s = selected();
+  const editor = $('editor');
+  editor.style.opacity = s ? 1 : 0.4;
+  for (const k of ['name', 'preset', 'pw', 'ph', 'cols', 'rows', 'x', 'y', 'color', 'mmw', 'mmh']) ed[k].disabled = !s;
+  $('nextColor').disabled = !s; $('dupScreen').disabled = !s; $('delScreen').disabled = !s;
+  if (!s) { ed.info.textContent = ''; ed.warn.textContent = ''; return; }
+  ed.name.value = s.name; ed.pw.value = s.pw; ed.ph.value = s.ph; ed.cols.value = s.cols; ed.rows.value = s.rows;
+  ed.x.value = s.x; ed.y.value = s.y; ed.color.value = s.color; ed.mmw.value = s.mmw; ed.mmh.value = s.mmh;
+  const pi = PANEL_PRESETS.findIndex(p => p.pw === s.pw && p.ph === s.ph && p.mmw === s.mmw && p.mmh === s.mmh);
+  ed.preset.value = pi >= 0 ? String(pi) : 'custom';
+  const r = rectOf(s);
+  const mW = (s.cols * s.mmw / 1000), mH = (s.rows * s.mmh / 1000);
+  ed.info.textContent = `${r.w} × ${r.h} px · ${s.cols * s.rows} painéis · ${fmtM(mW)} × ${fmtM(mH)} m`;
+  const out = r.x < 0 || r.y < 0 || r.x + r.w > state.canvas.w || r.y + r.h > state.canvas.h;
+  ed.warn.textContent = out ? 'Tela ultrapassa o canvas — a parte de fora será cortada na exportação.' : '';
+}
+const fmtM = v => v.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+
+function onEdit() {
+  const s = selected(); if (!s) return;
+  s.name = ed.name.value.trim() || s.name;
+  s.pw = clampInt(ed.pw.value, 1, 4096, s.pw); s.ph = clampInt(ed.ph.value, 1, 4096, s.ph);
+  s.cols = clampInt(ed.cols.value, 1, 500, s.cols); s.rows = clampInt(ed.rows.value, 1, 500, s.rows);
+  s.x = clampInt(ed.x.value, -100000, 100000, s.x); s.y = clampInt(ed.y.value, -100000, 100000, s.y);
+  s.color = ed.color.value; s.mmw = clampInt(ed.mmw.value, 1, 10000, s.mmw); s.mmh = clampInt(ed.mmh.value, 1, 10000, s.mmh);
+  syncEditor(); refreshList(); invalidate(); persist();
+}
+for (const k of ['name', 'pw', 'ph', 'cols', 'rows', 'x', 'y', 'mmw', 'mmh']) ed[k].addEventListener('change', onEdit);
+ed.color.addEventListener('input', onEdit);
+ed.preset.addEventListener('change', () => {
+  const s = selected(); if (!s || ed.preset.value === 'custom') return;
+  const p = PANEL_PRESETS[Number(ed.preset.value)];
+  s.pw = p.pw; s.ph = p.ph; s.mmw = p.mmw; s.mmh = p.mmh;
+  syncEditor(); refreshList(); invalidate(); persist();
+});
+$('nextColor').addEventListener('click', () => {
+  const s = selected(); if (!s) return;
+  const i = PALETTE.indexOf(s.color);
+  s.color = PALETTE[(i + 1) % PALETTE.length];
+  syncEditor(); refreshList(); invalidate(); persist();
+});
+
+// ---------- UI: opções de desenho ----------
+const optMap = { checker: 'oChecker', grid: 'oGrid', diag: 'oDiag', circle: 'oCircle', label: 'oLabel', panelInfo: 'oPanelInfo', numbers: 'oNumbers', res: 'oRes' };
+for (const [k, id] of Object.entries(optMap)) {
+  $(id).addEventListener('change', () => { state.opts[k] = $(id).checked; invalidate(); persist(); });
+}
+function syncOpts() { for (const [k, id] of Object.entries(optMap)) $(id).checked = !!state.opts[k]; }
+
+// ---------- Exportação ----------
+let exporting = false; // guarda: nunca mais de uma exportação em voo
+$('exportPng').addEventListener('click', () => {
+  if (exporting) return;
+  const { w, h } = state.canvas;
+  if (w * h > 16384 * 16384) { alert('Resolução grande demais para exportar.'); return; }
+  exporting = true; $('exportPng').disabled = true; $('exportPng').textContent = 'Exportando…';
+  try {
+    const off = document.createElement('canvas');
+    off.width = w; off.height = h;
+    const ctx = off.getContext('2d');
+    drawMap(ctx, state);
+    off.toBlob(blob => {
+      try {
+        if (blob) downloadBlob(blob, `pixelmap_${w}x${h}.png`);
+        else alert('Falha ao gerar o PNG (canvas muito grande para este navegador).');
+      } finally { finishExport(); }
+    }, 'image/png');
+  } catch (err) {
+    console.error(err); alert('Falha ao exportar: ' + err.message); finishExport();
+  }
+});
+function finishExport() { exporting = false; $('exportPng').disabled = false; $('exportPng').textContent = 'Exportar PNG'; }
+function downloadBlob(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+// projeto JSON
+$('saveJson').addEventListener('click', () => {
+  const data = JSON.stringify({ app: 'pixelmap-led', version: 1, state }, null, 2);
+  downloadBlob(new Blob([data], { type: 'application/json' }), `pixelmap_${state.canvas.w}x${state.canvas.h}.json`);
+});
+$('loadJson').addEventListener('click', () => $('fileInput').click());
+$('fileInput').addEventListener('change', e => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    try { loadState(JSON.parse(fr.result).state); }
+    catch (err) { alert('Arquivo inválido: ' + err.message); }
+  };
+  fr.readAsText(f);
+});
+
+// ---------- Persistência local ----------
+function persist() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) { /* sem storage: segue em memória */ }
+}
+function loadState(raw) {
+  const st = defaultState();
+  if (raw && typeof raw === 'object') {
+    if (raw.canvas) Object.assign(st.canvas, raw.canvas);
+    if (raw.opts) Object.assign(st.opts, raw.opts);
+    if (Array.isArray(raw.screens)) st.screens = raw.screens.map(s => newScreen(s));
+  }
+  // reatribui ids únicos
+  st.screens.forEach(s => { s.id = uid++; });
+  state = st;
+  selectedId = state.screens.length ? state.screens[0].id : null;
+  syncCanvasUI(); syncOpts(); refreshList(); syncEditor(); fitView(); persist();
+}
+
+// ---------- Boot ----------
+(function boot() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (_) {}
+  resizeView();
+  if (saved) loadState(saved);
+  else {
+    // exemplo inicial: 3 telas num FHD (imita o layout de referência)
+    const st = defaultState();
+    st.screens = [
+      newScreen({ name: 'Tela 1', pw: 128, ph: 128, cols: 4, rows: 8, x: 0,    y: 0,   color: PALETTE[0] }),
+      newScreen({ name: 'Tela 2', pw: 128, ph: 128, cols: 7, rows: 4, x: 512,  y: 0,   color: PALETTE[1] }),
+      newScreen({ name: 'Tela 3', pw: 128, ph: 128, cols: 7, rows: 4, x: 512,  y: 568, color: PALETTE[3] }),
+      newScreen({ name: 'Tela 4', pw: 128, ph: 128, cols: 4, rows: 8, x: 1408, y: 0,   color: PALETTE[2] }),
+    ];
+    loadState(st);
+  }
+  window.addEventListener('resize', () => { resizeView(); });
+  $('fitView').addEventListener('click', fitView);
+  $('zoom100').addEventListener('click', () => { cam.scale = 1; cam.ox = (vw - state.canvas.w) / 2; cam.oy = (vh - state.canvas.h) / 2; invalidate(); });
+  window.addEventListener('beforeunload', persist);
+})();
+</script>
+</body>
+</html>
